@@ -146,10 +146,20 @@
     }
     .col-picker-item:hover { background:#f5f3ff; }
     .col-picker-item.selected { color:#4f46e5; font-weight:600; }
-    .col-assign-btn {
-      min-width:unset; padding:0.3rem 0.6rem; font-size:11px;
-      --btn1:#7c3aed; --btn2:#6d28d9; border-radius:8px;
+    .btn-more {
+      min-width:unset; padding:0 0.55rem; font-size:18px; line-height:1;
+      --btn1:#6b7280; --btn2:#4b5563; border-radius:8px;
+      flex: 0 0 auto;
     }
+    .more-menu {
+      position:absolute; z-index:50; background:#fff; border:1px solid var(--border);
+      border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.12);
+      min-width:180px; padding:6px 0; font-size:13px; right:0; top:calc(100% + 4px);
+    }
+    .more-menu-item {
+      padding:8px 14px; cursor:pointer; display:flex; align-items:center; gap:8px;
+    }
+    .more-menu-item:hover { background:#f5f3ff; }
     .card { border:1px solid var(--border); border-radius:14px; background:#fff; overflow:hidden; display:flex; flex-direction:column; box-shadow: 0 4px 10px rgba(0,0,0,.05); }
     .coverWrap { background: linear-gradient(180deg,#f8fafc,#eef2ff); display:grid; place-items:center; aspect-ratio: 2/3; }
     .cover { max-width: 100%; max-height: 100%; object-fit: contain; display:block; }
@@ -227,7 +237,7 @@
       <button id="importBtn" class="btn-purple">Import EPUBs</button>
       <span class="small" id="libHint">Imported books are saved locally and appear here next time.</span>
       <span class="spacer"></span>
-      <span class="small-badge" title="App version">v1.1.2</span>
+      <span class="small-badge" title="App version">v1.1.3</span>
     </div>
     <div id="grid"></div>
   </div>
@@ -403,7 +413,7 @@
         const small=document.createElement('div'); small.className='small';
         small.textContent=`${humanSize(r.size||0)} · Added ${new Date(r.createdAt).toLocaleDateString()}`;
 
-        const row=document.createElement('div'); row.className='row';
+        const row=document.createElement('div'); row.className='row'; row.style.position='relative';
         const openBtn=document.createElement('button'); openBtn.className='btn-blue'; openBtn.textContent=r.lastCfi?'Continue':'Read';
         openBtn.onclick=()=>openBookFromDB(r.id);
         const delBtn=document.createElement('button'); delBtn.className='btn-orange'; delBtn.textContent='Delete';
@@ -411,16 +421,13 @@
           if(!confirm(`Delete "${r.title || 'this book'}"?\nThis cannot be undone.`)) return;
           await idbDelete(r.id); renderLibrary();
         };
-        row.append(openBtn,delBtn);
+        // ... more menu
+        const moreBtn=document.createElement('button'); moreBtn.className='btn-more'; moreBtn.textContent='···';
+        moreBtn.title='More options';
+        moreBtn.onclick=(e)=>{ e.stopPropagation(); showMoreMenu(moreBtn, r, row); };
+        row.append(openBtn, delBtn, moreBtn);
 
-        // Collection assign button
-        const colRow=document.createElement('div'); colRow.className='row'; colRow.style.marginTop='4px';
-        const colBtn=document.createElement('button'); colBtn.className='col-assign-btn';
-        colBtn.textContent=r.collectionId ? '📁 Move collection' : '📁 Add to collection';
-        colBtn.onclick=(e)=>{ e.stopPropagation(); showCollectionPicker(colBtn, r); };
-        colRow.appendChild(colBtn);
-
-        meta.append(title,author,small,row,colRow);
+        meta.append(title,author,small,row);
         card.append(covWrap,meta);
         gridEl.appendChild(card);
       }
@@ -518,39 +525,46 @@
       renderCollections();
     };
 
-    /********** Collection picker on book cards **********/
-    let activePicker=null;
-    function closePicker(){ if(activePicker){ activePicker.remove(); activePicker=null; } }
-    document.addEventListener('click', (e)=>{ if(activePicker && !activePicker.contains(e.target)) closePicker(); });
+    /********** More menu & collection picker on book cards **********/
+    let activeMenu=null;
+    function closeMenu(){ if(activeMenu){ activeMenu.remove(); activeMenu=null; } }
+    document.addEventListener('click', (e)=>{ if(activeMenu && !activeMenu.contains(e.target)) closeMenu(); });
 
-    async function showCollectionPicker(btn, book){
-      closePicker();
+    async function showMoreMenu(btn, book, container){
+      closeMenu();
       const cols=await idbGetAllCols();
-      const picker=document.createElement('div'); picker.className='col-picker';
-      picker.onclick=e=>e.stopPropagation();
+      const menu=document.createElement('div'); menu.className='more-menu';
+      menu.onclick=e=>e.stopPropagation();
+
+      // Collection section header
+      const hdr=document.createElement('div');
+      hdr.style.cssText='padding:4px 14px;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;';
+      hdr.textContent='Add to Collection';
+      menu.appendChild(hdr);
 
       // "None" option
-      const noneItem=document.createElement('div'); noneItem.className='col-picker-item'+(book.collectionId===null?' selected':'');
+      const noneItem=document.createElement('div'); noneItem.className='more-menu-item'+(book.collectionId===null?' selected':'');
+      if(book.collectionId===null) noneItem.style.color='#4f46e5';
       noneItem.innerHTML=`<span>🚫</span><span>None</span>`;
-      noneItem.onclick=async()=>{ book.collectionId=null; await idbAddBook(book); closePicker(); renderLibrary(); };
-      picker.appendChild(noneItem);
+      noneItem.onclick=async()=>{ book.collectionId=null; await idbAddBook(book); closeMenu(); renderLibrary(); };
+      menu.appendChild(noneItem);
 
-      for(const col of cols.sort((a,b)=>a.name.localeCompare(b.name))){
-        const item=document.createElement('div'); item.className='col-picker-item'+(book.collectionId===col.id?' selected':'');
-        item.innerHTML=`<span>📁</span><span>${col.name}</span>`;
-        item.onclick=async()=>{ book.collectionId=col.id; await idbAddBook(book); closePicker(); renderLibrary(); };
-        picker.appendChild(item);
-      }
-
-      if(!cols.length){
-        const empty=document.createElement('div'); empty.className='col-picker-item';
+      if(cols.length){
+        for(const col of cols.sort((a,b)=>a.name.localeCompare(b.name))){
+          const item=document.createElement('div'); item.className='more-menu-item';
+          if(book.collectionId===col.id) item.style.color='#4f46e5';
+          item.innerHTML=`<span>📁</span><span>${col.name}${book.collectionId===col.id?' ✓':''}</span>`;
+          item.onclick=async()=>{ book.collectionId=col.id; await idbAddBook(book); closeMenu(); renderLibrary(); };
+          menu.appendChild(item);
+        }
+      } else {
+        const empty=document.createElement('div'); empty.className='more-menu-item';
         empty.style.color='var(--muted)'; empty.textContent='No collections yet';
-        picker.appendChild(empty);
+        menu.appendChild(empty);
       }
 
-      btn.parentElement.style.position='relative';
-      btn.parentElement.appendChild(picker);
-      activePicker=picker;
+      container.appendChild(menu);
+      activeMenu=menu;
     }
 
     /********** Import **********/

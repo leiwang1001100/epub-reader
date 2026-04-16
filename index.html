@@ -35,7 +35,7 @@
       <button id="importBtn" class="btn-purple">Import EPUBs</button>
       <span class="small" id="libHint">Imported books are saved locally and appear here next time.</span>
       <span class="spacer"></span>
-      <span class="small-badge" title="App version">v1.1.5</span>
+      <span class="small-badge" title="App version">v1.1.6</span>
     </div>
     <div id="grid"></div>
   </div>
@@ -214,7 +214,7 @@
         const row=document.createElement('div'); row.className='row';
         const openBtn=document.createElement('button'); openBtn.className='btn-blue'; openBtn.textContent=r.lastCfi?'Continue':'Read';
         openBtn.onclick=()=>openBookFromDB(r.id);
-        const delBtn=document.createElement('button'); delBtn.className='btn-orange btn-icon'; delBtn.textContent='🗑️'; delBtn.title='Delete book';
+        const delBtn=document.createElement('button'); delBtn.className='btn btn-icon'; delBtn.textContent='🗑️'; delBtn.title='Delete book';
         delBtn.onclick=async()=>{
           if(!confirm(`Delete "${r.title || 'this book'}"?\nThis cannot be undone.`)) return;
           await idbDelete(r.id); renderLibrary();

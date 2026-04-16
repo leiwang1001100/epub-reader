@@ -135,11 +135,14 @@ async function showMoreMenu(btn, book, container){
   hdr.textContent='Add to Collection';
   menu.appendChild(hdr);
 
+  // Scrollable list of collections (capped with scroll)
+  const scrollWrap=document.createElement('div'); scrollWrap.className='more-menu-scroll';
+
   const noneItem=document.createElement('div'); noneItem.className='more-menu-item'+(book.collectionId===null?' selected':'');
   if(book.collectionId===null) noneItem.style.color='#4f46e5';
   noneItem.innerHTML=`<span>🚫</span><span>None</span>`;
   noneItem.onclick=async()=>{ book.collectionId=null; await idbAddBook(book); closeMenu(); renderLibrary(); };
-  menu.appendChild(noneItem);
+  scrollWrap.appendChild(noneItem);
 
   if(cols.length){
     for(const col of cols.sort((a,b)=>a.name.localeCompare(b.name))){
@@ -147,14 +150,15 @@ async function showMoreMenu(btn, book, container){
       if(book.collectionId===col.id) item.style.color='#4f46e5';
       item.innerHTML=`<span>📁</span><span>${escapeHtml(col.name)}${book.collectionId===col.id?' ✓':''}</span>`;
       item.onclick=async()=>{ book.collectionId=col.id; await idbAddBook(book); closeMenu(); renderLibrary(); };
-      menu.appendChild(item);
+      scrollWrap.appendChild(item);
     }
   } else {
     const empty=document.createElement('div'); empty.className='more-menu-item';
     empty.style.cssText='color:var(--muted);cursor:default;';
     empty.innerHTML=`<span>📭</span><span>No collections yet</span>`;
-    menu.appendChild(empty);
+    scrollWrap.appendChild(empty);
   }
+  menu.appendChild(scrollWrap);
 
   const divider=document.createElement('div');
   divider.style.cssText='border-top:1px solid var(--border);margin:4px 0;';
@@ -176,6 +180,20 @@ async function showMoreMenu(btn, book, container){
 
   container.appendChild(menu);
   activeMenu=menu;
+
+  // Make menu items focusable and add arrow key navigation
+  const items=[...menu.querySelectorAll('.more-menu-item')];
+  items.forEach(item=>item.setAttribute('tabindex','0'));
+  if(items.length) items[0].focus();
+
+  menu.addEventListener('keydown',(e)=>{
+    const focused=document.activeElement;
+    const idx=items.indexOf(focused);
+    if(e.key==='ArrowDown'){ e.preventDefault(); items[(idx+1)%items.length].focus(); }
+    else if(e.key==='ArrowUp'){ e.preventDefault(); items[(idx-1+items.length)%items.length].focus(); }
+    else if(e.key==='Enter'||e.key===' '){ e.preventDefault(); focused.click(); }
+    else if(e.key==='Escape'){ closeMenu(); }
+  });
 }
 
 function initCollections(){

@@ -137,7 +137,19 @@
       background: radial-gradient(1200px 600px at 50% -200px, #eef2ff, #fff);
       display: none;
     }
-    #libToolbar { display:flex; gap:8px; align-items:center; margin-bottom: 12px; }
+    #libToolbar { display:flex; gap:8px; align-items:center; margin-bottom: 12px; flex-wrap: wrap; }
+    #libSearch {
+      padding: 0.4rem 0.75rem; border: 1px solid var(--border);
+      border-radius: 8px; font-size: 13px; width: 200px;
+      outline: none; transition: border-color 0.15s;
+    }
+    #libSearch:focus { border-color: #4f46e5; }
+    .filter-select {
+      padding: 0.4rem 0.6rem; border: 1px solid var(--border);
+      border-radius: 8px; font-size: 13px; background: #fff;
+      cursor: pointer; outline: none; transition: border-color 0.15s;
+    }
+    .filter-select:focus { border-color: #4f46e5; }
     .toolbar-divider {
       border: none; border-top: 1px solid var(--border);
       margin: 0 0 16px 0;

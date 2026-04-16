@@ -33,7 +33,16 @@
   <div id="library">
     <div id="libToolbar">
       <button id="importBtn" class="btn-purple">Import EPUBs</button>
-      <span class="small" id="libHint">Imported books are saved locally and appear here next time.</span>
+      <input id="libSearch" type="search" placeholder="🔍 Search title / author…" />
+      <select id="libColFilter" class="filter-select">
+        <option value="">📁 All Collections</option>
+      </select>
+      <select id="libSort" class="filter-select">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="title-az">Title A–Z</option>
+        <option value="title-za">Title Z–A</option>
+      </select>
       <span class="spacer"></span>
       <div class="page-controls">
         <span class="small">Show:</span>
@@ -45,8 +54,9 @@
         <span id="libPageInfo" class="small">Page 1 of 1</span>
         <button id="libNextBtn" class="page-nav-btn">&#8250;</button>
       </div>
-      <span class="small-badge" title="App version">v1.3.0</span>
+      <span class="small-badge" title="App version">v1.3.1</span>
     </div>
+    <p id="libHint" class="small" style="margin:0 0 8px 0;color:var(--muted);"></p>
     <hr class="toolbar-divider" />
     <div id="grid"></div>
   </div>

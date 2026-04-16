@@ -75,6 +75,11 @@ document.querySelectorAll('.col-size-btn').forEach(btn=>{
 document.getElementById('colPrevBtn').addEventListener('click',()=>{ colPage--; renderCollections(); });
 document.getElementById('colNextBtn').addEventListener('click',()=>{ colPage++; renderCollections(); });
 
+/********** Library search/sort/filter **********/
+document.getElementById('libSearch').addEventListener('input',()=>{ libPage=1; renderLibrary(); });
+document.getElementById('libColFilter').addEventListener('change',()=>{ libPage=1; renderLibrary(); });
+document.getElementById('libSort').addEventListener('change',()=>{ libPage=1; renderLibrary(); });
+
 /********** To library button **********/
 toLibraryBtn.onclick=async()=>{ await unloadBook(); renderLibrary(); };
 

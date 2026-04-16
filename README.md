@@ -89,6 +89,16 @@ epub_app/
 - To reset all data, clear site data in your browser DevTools → Application → IndexedDB.
 - Best tested in modern browsers: **Chrome**, **Edge**, **Firefox**.
 
+### ⚠️ Known Limitations
+
+| Limitation | Detail |
+|---|---|
+| **Library search/sort** | All books are loaded into memory for filtering and sorting. Works well for up to ~500 books. Beyond that, performance may degrade depending on device memory. |
+| **Cover images** | Cover blobs are loaded into memory when rendering the library grid. Large libraries with high-resolution covers may increase memory usage. |
+| **Fixed-layout EPUBs** | Graphic novels and comics in fixed-layout EPUB format are not supported. Use PDF format instead. |
+| **File protocol** | The app runs from `file://` and does not use ES modules. All JS files are loaded via `<script>` tags in order. |
+| **No sync** | Books and collections are stored locally in your browser only — no cloud sync or cross-device support. |
+
 ---
 
 ## 🤝 Contributing

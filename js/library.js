@@ -13,7 +13,38 @@ async function renderLibrary(){
   setSidebarActive('home');
   metaEl.textContent=''; statusEl.textContent='';
 
-  const allBooks=(await idbGetAll()).sort((a,b)=>b.createdAt-a.createdAt);
+  // Populate collection filter dropdown
+  const libColFilter=document.getElementById('libColFilter');
+  const libSearch=document.getElementById('libSearch');
+  const libSort=document.getElementById('libSort');
+  const allCols=await idbGetAllCols();
+  const prevColVal=libColFilter.value;
+  libColFilter.innerHTML='<option value="">📁 All Collections</option>';
+  libColFilter.innerHTML+='<option value="__none__">🚫 Uncategorised</option>';
+  allCols.sort((a,b)=>a.name.localeCompare(b.name)).forEach(c=>{
+    libColFilter.innerHTML+=`<option value="${c.id}">${escapeHtml(c.name)}</option>`;
+  });
+  libColFilter.value=prevColVal||'';
+
+  // Get all books and apply search/sort/filter
+  let allBooks=await idbGetAll();
+
+  // Filter by collection
+  const colFilter=libColFilter.value;
+  if(colFilter==='__none__') allBooks=allBooks.filter(b=>!b.collectionId);
+  else if(colFilter) allBooks=allBooks.filter(b=>b.collectionId===colFilter);
+
+  // Filter by search
+  const q=(libSearch.value||'').trim().toLowerCase();
+  if(q) allBooks=allBooks.filter(b=>(b.title||'').toLowerCase().includes(q)||(b.author||'').toLowerCase().includes(q));
+
+  // Sort
+  const sort=libSort.value||'newest';
+  if(sort==='newest') allBooks.sort((a,b)=>b.createdAt-a.createdAt);
+  else if(sort==='oldest') allBooks.sort((a,b)=>a.createdAt-b.createdAt);
+  else if(sort==='title-az') allBooks.sort((a,b)=>(a.title||'').localeCompare(b.title||''));
+  else if(sort==='title-za') allBooks.sort((a,b)=>(b.title||'').localeCompare(a.title||''));
+
   const totalPages=Math.max(1,Math.ceil(allBooks.length/libPageSize));
   libPage=Math.min(libPage,totalPages);
   const start=(libPage-1)*libPageSize;
@@ -33,7 +64,10 @@ async function renderLibrary(){
   });
 
   gridEl.innerHTML='';
-  libHint.textContent = allBooks.length ? 'Books are saved locally in your browser.' : 'Tip: Click "Import EPUBs" to add books to your library.';
+  const total=allBooks.length;
+  libHint.textContent = total
+    ? `Showing ${Math.min(start+1, total)}–${Math.min(start+libPageSize, total)} of ${total} book${total!==1?'s':''}`
+    : (q ? 'No books match your search.' : 'Tip: Click "Import EPUBs" to add books to your library.');
 
   for(const r of books){
     const card=document.createElement('div'); card.className='card';

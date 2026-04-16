@@ -123,7 +123,7 @@
       <button id="importBtn" class="btn-purple">Import EPUBs</button>
       <span class="small" id="libHint">Imported books are saved locally and appear here next time.</span>
       <span class="spacer"></span>
-      <span class="small-badge" title="App version">v1.0.2</span>
+      <span class="small-badge" title="App version">v1.0.3</span>
     </div>
     <div id="grid"></div>
   </div>
@@ -179,13 +179,17 @@
     /********** State **********/
     let book, rendition, locations;
     let currentBookId=null;
-    let fontSize=100;
-    let tocVisible=true;
     let _keyHandler=null;   // stored so we can remove it before re-adding
     let _resizeHandler=null; // stored so we can remove it before re-adding
 
-    const bgModes=['paper','sepia','dark']; let bgIdx=0;
+    const bgModes=['paper','sepia','dark'];
     const BG_COLORS={paper:{bg:'#fdfaf3',fg:'#2b2b2b'},sepia:{bg:'#f4ecd8',fg:'#3b2f1a'},dark:{bg:'#111',fg:'#eee'}};
+
+    // Persist font size and background preference across book opens
+    let fontSize=parseInt(localStorage.getItem('epub_fontSize')||'100',10);
+    let bgIdx=bgModes.indexOf(localStorage.getItem('epub_bgMode')||'paper');
+    if(bgIdx<0) bgIdx=0;
+    let tocVisible=true;
 
     /********** Utilities **********/
     function humanSize(bytes){const u=['B','KB','MB','GB'];let i=0,n=bytes;while(n>=1024&&i<u.length-1){n/=1024;i++;}return`${n.toFixed(n<10&&i>0?1:0)} ${u[i]}`;}
@@ -202,6 +206,7 @@
     }
     function applyBackground(mode){
       if(!rendition)return;
+      localStorage.setItem('epub_bgMode', mode);
       rendition.getContents().forEach(c=>setBackgroundForContents(c,mode));
       bgToggle.textContent=`Background: ${mode[0].toUpperCase()}${mode.slice(1)}`;
     }
@@ -374,6 +379,7 @@
     }
 
     function applyFontSize(){
+      localStorage.setItem('epub_fontSize', fontSize);
       try { rendition.themes.fontSize(fontSize+'%'); } catch {}
       try {
         rendition.getContents().forEach(c=>{
@@ -451,8 +457,8 @@
       // Background on new sections
       rendition.hooks.content.register((contents)=>{ setBackgroundForContents(contents, bgModes[bgIdx]||'paper'); });
 
-      // Defaults
-      bgIdx=0; applyBackground('paper'); applyFontSize();
+      // Apply persisted preferences (font size + background)
+      applyBackground(bgModes[bgIdx]); applyFontSize();
 
       tocVisible=true; updateTocVisibility();
       wirePaging();

@@ -35,7 +35,7 @@
       <button id="importBtn" class="btn-purple">Import EPUBs</button>
       <span class="small" id="libHint">Imported books are saved locally and appear here next time.</span>
       <span class="spacer"></span>
-      <span class="small-badge" title="App version">v1.1.7</span>
+      <span class="small-badge" title="App version">v1.1.8</span>
     </div>
     <div id="grid"></div>
   </div>
@@ -214,7 +214,7 @@
         const row=document.createElement('div'); row.className='row';
         const openBtn=document.createElement('button'); openBtn.className='btn-blue'; openBtn.textContent=r.lastCfi?'Continue':'Read';
         openBtn.onclick=()=>openBookFromDB(r.id);
-        const delBtn=document.createElement('button'); delBtn.className='btn-orange btn-icon'; delBtn.textContent='🗑️'; delBtn.title='Delete book';
+        const delBtn=document.createElement('button'); delBtn.className='btn-orange'; delBtn.textContent='✖'; delBtn.title='Delete book';
         delBtn.onclick=async()=>{
           if(!confirm(`Delete "${r.title || 'this book'}"?\nThis cannot be undone.`)) return;
           await idbDelete(r.id); renderLibrary();
@@ -257,15 +257,28 @@
         return;
       }
       for(const col of cols.sort((a,b)=>a.name.localeCompare(b.name))){
-        const count=books.filter(b=>b.collectionId===col.id).length;
+        const colBooks=books.filter(b=>b.collectionId===col.id).sort((a,b)=>b.createdAt-a.createdAt);
+        const count=colBooks.length;
         const card=document.createElement('div'); card.className='col-card';
-        const icon=document.createElement('div'); icon.className='col-icon'; icon.textContent='📁';
+
+        // Show cover of most recently added book, or folder emoji if empty
+        const icon=document.createElement('div'); icon.className='col-icon';
+        const latestBook=colBooks[0];
+        if(latestBook?.coverBlob){
+          const img=document.createElement('img');
+          img.src=URL.createObjectURL(latestBook.coverBlob);
+          img.style.cssText='width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:4px;';
+          icon.appendChild(img);
+        } else {
+          icon.textContent='📁';
+        }
+
         const name=document.createElement('div'); name.className='col-name'; name.textContent=col.name;
         const cnt=document.createElement('div'); cnt.className='col-count'; cnt.textContent=`${count} book${count!==1?'s':''}`;
         const row=document.createElement('div'); row.className='row';
         const openBtn=document.createElement('button'); openBtn.className='btn-blue'; openBtn.textContent='Open';
         openBtn.onclick=(e)=>{ e.stopPropagation(); openCollectionDetail(col); };
-        const delBtn=document.createElement('button'); delBtn.className='btn-orange'; delBtn.textContent='Delete';
+        const delBtn=document.createElement('button'); delBtn.className='btn-orange'; delBtn.textContent='Delete'; delBtn.title='Delete collection';
         delBtn.onclick=async(e)=>{
           e.stopPropagation();
           if(!confirm(`Delete collection "${col.name}"?\nBooks will remain in your library.`)) return;
@@ -304,15 +317,39 @@
         const row=document.createElement('div'); row.className='row';
         const readBtn=document.createElement('button'); readBtn.className='btn-blue'; readBtn.textContent=r.lastCfi?'Continue':'Read';
         readBtn.onclick=()=>openBookFromDB(r.id);
-        const removeBtn=document.createElement('button'); removeBtn.className='btn-orange'; removeBtn.textContent='Remove';
-        removeBtn.onclick=async()=>{
-          r.collectionId=null; await idbAddBook(r); openCollectionDetail(col);
+        row.append(readBtn);
+
+        // ··· button pinned to top-right of card
+        const moreBtn=document.createElement('button'); moreBtn.className='btn-more'; moreBtn.textContent='···';
+        moreBtn.title='More options';
+        moreBtn.onclick=(e)=>{
+          e.stopPropagation();
+          showCollectionDetailMenu(moreBtn, r, card, col);
         };
-        row.append(readBtn, removeBtn);
+
         meta.append(title, author, row);
-        card.append(covWrap, meta);
+        card.append(covWrap, meta, moreBtn);
         detailGrid.appendChild(card);
       }
+    }
+
+    async function showCollectionDetailMenu(btn, book, card, col){
+      closeMenu();
+      const menu=document.createElement('div'); menu.className='more-menu';
+      menu.onclick=e=>e.stopPropagation();
+
+      const hdr=document.createElement('div');
+      hdr.style.cssText='padding:4px 14px;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;';
+      hdr.textContent='Options';
+      menu.appendChild(hdr);
+
+      const removeItem=document.createElement('div'); removeItem.className='more-menu-item';
+      removeItem.innerHTML=`<span>✖</span><span>Remove from collection</span>`;
+      removeItem.onclick=async()=>{ book.collectionId=null; await idbAddBook(book); closeMenu(); openCollectionDetail(col); };
+      menu.appendChild(removeItem);
+
+      card.appendChild(menu);
+      activeMenu=menu;
     }
 
     backToCollections.onclick=()=>{ collectionDetail.style.display='none'; collectionsGrid.style.display='grid'; renderCollections(); };

@@ -6,7 +6,7 @@ async function renderLibrary(){
   collectionsView.style.display='none';
   viewerEl.style.display='none';
   controls.style.display='none';
-  toLibraryBtn.style.display='none';
+  // toLibraryBtn removed
   searchBox.style.display='none';
   importBtn.style.display='inline-block';
   progressBar.style.display='none';
@@ -98,9 +98,11 @@ function initImport(){
     await openDB();
     const existingBooks=await idbGetAll();
     let imported=0, skipped=0;
+    const total=files.length;
 
-    for(const f of files){
-      statusEl.textContent=`Importing ${f.name}…`;
+    for(let i=0;i<files.length;i++){
+      const f=files[i];
+      statusEl.textContent=`Importing ${i+1}/${total}: ${f.name}…`;
       const buf=await f.arrayBuffer();
       const hash=await sha256(buf);
 

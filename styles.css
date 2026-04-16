@@ -1,5 +1,16 @@
-:root { --border:#e5e7eb; --muted:#6b7280; --sidebar-w:56px; }
-    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto; color:#111; }
+:root {
+      --border:#e5e7eb; --muted:#6b7280; --sidebar-w:56px;
+      --bg-main:#fff; --bg-card:#fff; --bg-header:#fff;
+      --text-main:#111; --text-muted:#6b7280;
+      --input-bg:#fff; --input-border:#e5e7eb;
+    }
+    :root.dark {
+      --border:#374151; --muted:#9ca3af;
+      --bg-main:#111827; --bg-card:#1f2937; --bg-header:#1f2937;
+      --text-main:#f9fafb; --text-muted:#9ca3af;
+      --input-bg:#374151; --input-border:#4b5563;
+    }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto; color: var(--text-main); background: var(--bg-main); transition: background 0.2s, color 0.2s; }
 
     /* ── Pagination controls ── */
     .page-controls {
@@ -44,9 +55,13 @@
       display: grid; place-items: center;
       font-size: 20px; color: #a5b4fc; cursor: pointer;
       transition: background 0.15s, color 0.15s;
+      filter: none !important;
     }
-    .sidebar-btn:hover { background: #312e81; color: #fff; transform: none; box-shadow: none; filter: none; }
+    .sidebar-btn:hover { background: #312e81; color: #fff; transform: none; box-shadow: none; filter: none !important; }
     .sidebar-btn.active { background: #4f46e5; color: #fff; }
+    :root.dark .sidebar-btn { color: #a5b4fc; }
+    :root.dark .sidebar-btn:hover { color: #fff; }
+    :root.dark .sidebar-btn.active { color: #fff; }
     .sidebar-btn[title]:hover::after {
       content: attr(title);
       position: absolute; left: calc(var(--sidebar-w) + 6px);
@@ -85,8 +100,9 @@
       display:flex; gap:0.6rem; justify-content:center; flex-wrap: wrap;
       border-top:1px solid var(--border);
       background:#ffffffcc; backdrop-filter: saturate(1.1) blur(6px);
-      z-index: 20; display:none;
+      z-index: 20; display:none; color: var(--text-main);
     }
+    :root.dark #controls { background: rgba(31,41,55,0.92); }
 
     /* Keep file input present (so click is allowed) but off-screen */
     #importInput {
@@ -132,25 +148,29 @@
       padding: 16px; overflow-y: auto; z-index: 10;
     }
     #library {
-      background: radial-gradient(1200px 600px at 50% -200px, #eef2ff, #fff);
+      background: radial-gradient(1200px 600px at 50% -200px, #eef2ff, var(--bg-main));
       display: block;
     }
     #collectionsView {
-      background: radial-gradient(1200px 600px at 50% -200px, #eef2ff, #fff);
+      background: radial-gradient(1200px 600px at 50% -200px, #eef2ff, var(--bg-main));
       display: none;
+    }
+    :root.dark #library, :root.dark #collectionsView {
+      background: var(--bg-main);
     }
     #libToolbar, #collectionsToolbar { display:flex; gap:8px; align-items:center; margin-bottom: 12px; flex-wrap: wrap; }
 
     /* Mobile layout intentionally not supported — desktop/laptop only app */
     #libSearch {
-      padding: 0.4rem 0.75rem; border: 1px solid var(--border);
+      padding: 0.4rem 0.75rem; border: 1px solid var(--input-border);
       border-radius: 8px; font-size: 13px; width: 200px;
       outline: none; transition: border-color 0.15s;
+      background: var(--input-bg); color: var(--text-main);
     }
     #libSearch:focus { border-color: #4f46e5; }
     .filter-select {
-      padding: 0.4rem 0.6rem; border: 1px solid var(--border);
-      border-radius: 8px; font-size: 13px; background: #fff;
+      padding: 0.4rem 0.6rem; border: 1px solid var(--input-border);
+      border-radius: 8px; font-size: 13px; background: var(--input-bg); color: var(--text-main);
       cursor: pointer; outline: none; transition: border-color 0.15s;
     }
     .filter-select:focus { border-color: #4f46e5; }
@@ -162,7 +182,7 @@
     #collectionsToolbar { display:flex; gap:8px; align-items:center; margin-bottom: 12px; }
     #collectionsGrid { display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
     .col-card {
-      border:1px solid var(--border); border-radius:14px; background:#fff;
+      border:1px solid var(--border); border-radius:14px; background:var(--bg-card);
       padding: 16px; display:flex; flex-direction:column; gap:8px;
       box-shadow: 0 4px 10px rgba(0,0,0,.05); cursor:pointer;
       transition: transform 0.15s, box-shadow 0.15s;
@@ -212,9 +232,9 @@
       transform: none; box-shadow: 0 2px 8px rgba(0,0,0,0.2); filter: none;
     }
     .more-menu {
-      position:absolute; z-index:50; background:#fff; border:1px solid var(--border);
+      position:absolute; z-index:50; background:var(--bg-card); border:1px solid var(--border);
       border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.12);
-      min-width:180px; padding:6px 0; font-size:13px; right:8px; top:40px;
+      min-width:180px; padding:6px 0; font-size:13px; right:8px; top:40px; color:var(--text-main);
     }
     .more-menu-scroll {
       max-height: 220px; overflow-y: auto;
@@ -225,7 +245,7 @@
     }
     .more-menu-item:hover, .more-menu-item:focus { background:#f5f3ff; }
     .more-menu-item:focus-visible { outline: 2px solid #4f46e5; outline-offset: -2px; }
-    .card { border:1px solid var(--border); border-radius:14px; background:#fff; overflow:hidden; display:flex; flex-direction:column; box-shadow: 0 4px 10px rgba(0,0,0,.05); position: relative; }
+    .card { border:1px solid var(--border); border-radius:14px; background:var(--bg-card); overflow:hidden; display:flex; flex-direction:column; box-shadow: 0 4px 10px rgba(0,0,0,.05); position: relative; }
     .coverWrap { background: linear-gradient(180deg,#f8fafc,#eef2ff); display:grid; place-items:center; aspect-ratio: 2/3; }
     .cover { max-width: 100%; max-height: 100%; object-fit: contain; display:block; }
     .meta { padding: 10px; display:flex; flex-direction:column; gap:6px; }
@@ -238,10 +258,10 @@
       text-overflow: ellipsis;
     }
     .author {
-      color: var(--muted); font-size: 12px;
+      color: var(--text-muted); font-size: 12px;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .small { color: var(--muted); font-size: 12px; }
+    .small { color: var(--text-muted); font-size: 12px; }
     .row { display:flex; gap:8px; }
     .row > button { flex:1; min-width: unset; }
 
@@ -249,7 +269,7 @@
     #split { display:flex; height:100%; position: relative; }
     #toc {
       flex: 0 0 300px; width: 300px; max-width: none; overflow: auto;
-      z-index: 10; background: #fff; border-right: 1px solid var(--border); padding: 0.5rem 0.75rem;
+      z-index: 10; background: var(--bg-card); color: var(--text-main); border-right: 1px solid var(--border); padding: 0.5rem 0.75rem;
     }
     #toc.hidden { display:none; border-right:none; }
     #toc ul { margin: 0; padding-left: 1rem; }
@@ -264,7 +284,7 @@
     #searchBox { flex: 1; max-width: 420px; }
 
     /* Header and viewer account for sidebar */
-    header { padding-left: calc(var(--sidebar-w) + 0.75rem); }
+    header { padding-left: calc(var(--sidebar-w) + 0.75rem); background: var(--bg-header); color: var(--text-main); }
     #viewer { position: fixed; inset: 59px 0 64px var(--sidebar-w); display:none; }
     #progressBar { left: var(--sidebar-w); }
     #progressLabel { right: 8px; }

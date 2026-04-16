@@ -1,6 +1,6 @@
 'use strict';
 /********** Elements **********/
-const toLibraryBtn=document.getElementById('toLibrary');
+// toLibraryBtn removed — sidebar 🏠 handles navigation back to library
 const importInput=document.getElementById('importInput');
 const importBtn=document.getElementById('importBtn');
 const libraryEl=document.getElementById('library');
@@ -37,6 +37,33 @@ let libPage=1;
 let colPageSize=parseInt(localStorage.getItem('epub_colPageSize')||'20',10);
 let colPage=1;
 
+/********** Dark theme **********/
+function initTheme(){
+  const toggle=document.getElementById('themeToggle');
+  // Detect saved preference or system preference
+  const saved=localStorage.getItem('epub_theme');
+  const prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const isDark = saved ? saved==='dark' : prefersDark;
+  applyTheme(isDark);
+
+  toggle.onclick=()=>{
+    const nowDark=!document.documentElement.classList.contains('dark');
+    applyTheme(nowDark);
+    localStorage.setItem('epub_theme', nowDark?'dark':'light');
+  };
+
+  // Listen for system theme changes
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e=>{
+    if(!localStorage.getItem('epub_theme')) applyTheme(e.matches);
+  });
+}
+
+function applyTheme(dark){
+  document.documentElement.classList.toggle('dark', dark);
+  const toggle=document.getElementById('themeToggle');
+  if(toggle){ toggle.title=dark?'Switch to light mode':'Switch to dark mode'; toggle.setAttribute('aria-label', dark?'Switch to light mode':'Switch to dark mode'); }
+}
+
 /********** Sidebar navigation **********/
 function setSidebarActive(view){
   sideHome.classList.toggle('active', view==='home');
@@ -48,8 +75,8 @@ function renderLibrary_hide(){
   document.body.classList.add('mode-library');
 }
 
-sideHome.onclick=async()=>{ await openDB(); collectionsView.style.display='none'; renderLibrary(); setSidebarActive('home'); };
-sideCollections.onclick=async()=>{ await openDB(); renderLibrary_hide(); renderCollections(); setSidebarActive('collections'); };
+sideHome.onclick=async()=>{ await openDB(); if(typeof rendition!=='undefined'&&rendition) await unloadBook(); collectionsView.style.display='none'; renderLibrary(); setSidebarActive('home'); };
+sideCollections.onclick=async()=>{ await openDB(); if(typeof rendition!=='undefined'&&rendition) await unloadBook(); renderLibrary_hide(); renderCollections(); setSidebarActive('collections'); };
 
 /********** Pagination event wiring **********/
 // Home pagination
@@ -81,8 +108,7 @@ document.getElementById('libSearch').addEventListener('input',()=>{ libPage=1; r
 document.getElementById('libColFilter').addEventListener('change',()=>{ libPage=1; renderLibrary(); });
 document.getElementById('libSort').addEventListener('change',()=>{ libPage=1; renderLibrary(); });
 
-/********** To library button **********/
-toLibraryBtn.onclick=async()=>{ await unloadBook(); renderLibrary(); };
+// toLibraryBtn removed — sidebar 🏠 handles navigation back to library
 
 /********** Boot **********/
 window.addEventListener('error', e=>console.error('Error:', e.message));
@@ -90,6 +116,7 @@ window.addEventListener('unhandledrejection', e=>console.error('Promise rejectio
 
 (async function init(){
   try{
+    initTheme();
     await openDB();
     initImport();
     initCollections();

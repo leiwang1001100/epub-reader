@@ -115,7 +115,7 @@ async function unloadBook(){
   try{ await book?.destroy(); }catch{}
   book=null; rendition=null; locations=null;
   controls.style.display='none';
-  document.getElementById('sidebar').style.display='flex';
+  // sidebar was never hidden, nothing to restore
 }
 
 async function openBookFromDB(id){
@@ -130,10 +130,10 @@ async function openBookFromDB(id){
   document.body.classList.remove('mode-library');
   libraryEl.style.display='none';
   collectionsView.style.display='none';
-  document.getElementById('sidebar').style.display='none';
+  // sidebar stays visible during reading
   viewerEl.style.display='block';
   controls.style.display='flex';
-  toLibraryBtn.style.display='inline-block';
+  // toLibraryBtn removed
   searchBox.style.display='inline-block';
   importBtn.style.display='none';
   progressBar.style.display='block';

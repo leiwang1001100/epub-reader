@@ -71,40 +71,21 @@ async function renderLibrary(){
     : (q||colFilter ? 'No books match your search.' : 'Tip: Click "Import EPUBs" to add books to your library.');
 
   for(const r of books){
-    const card=document.createElement('div'); card.className='card';
-    const covWrap=document.createElement('div'); covWrap.className='coverWrap';
-    const img=document.createElement('img'); img.className='cover'; img.alt=r.title||'Book cover';
-    if(r.coverBlob){
-      const blobUrl=URL.createObjectURL(r.coverBlob);
-      img.src=blobUrl;
-      img.onload=()=>URL.revokeObjectURL(blobUrl);
-      img.onerror=()=>URL.revokeObjectURL(blobUrl);
-    }
-    covWrap.appendChild(img);
-
-    const meta=document.createElement('div'); meta.className='meta';
-    const title=document.createElement('div'); title.className='title'; title.textContent=r.title||'Untitled'; title.title=r.title||'Untitled';
-    const author=document.createElement('div'); author.className='author'; author.textContent=r.author||''; author.title=r.author||'';
-    const small=document.createElement('div'); small.className='small';
-    small.textContent=`${humanSize(r.size||0)} · Added ${new Date(r.createdAt).toLocaleDateString()}`;
-
-    const row=document.createElement('div'); row.className='row';
-    const openBtn=document.createElement('button'); openBtn.className='btn-blue'; openBtn.textContent=r.lastCfi?'Continue':'Read';
-    openBtn.onclick=()=>openBookFromDB(r.id);
+    // Delete button
     const delBtn=document.createElement('button'); delBtn.className='btn-orange'; delBtn.textContent='✖'; delBtn.title='Delete book';
     delBtn.onclick=async()=>{
-      if(!confirm(`Delete "${r.title || 'this book'}"?\nThis cannot be undone.`)) return;
+      if(!confirm(`Delete "${r.title||'this book'}"?\nThis cannot be undone.`)) return;
       await idbDelete(r.id); renderLibrary();
     };
-    row.append(openBtn, delBtn);
 
-    // ··· button pinned to top-right of card
-    const moreBtn=document.createElement('button'); moreBtn.className='btn-more'; moreBtn.textContent='···';
-    moreBtn.title='More options';
+    const {card, moreBtn}=createBookCard(r, openBookFromDB, [delBtn]);
+
+    // Add file size + date info
+    const small=document.createElement('div'); small.className='small';
+    small.textContent=`${humanSize(r.size||0)} · Added ${new Date(r.createdAt).toLocaleDateString()}`;
+    card.querySelector('.meta').insertBefore(small, card.querySelector('.row'));
+
     moreBtn.onclick=(e)=>{ e.stopPropagation(); showMoreMenu(moreBtn, r, card); };
-
-    meta.append(title,author,small,row);
-    card.append(covWrap, meta, moreBtn);
     gridEl.appendChild(card);
   }
 }

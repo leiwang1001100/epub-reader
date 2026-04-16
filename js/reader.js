@@ -8,6 +8,11 @@ let _resizeHandler=null;
 const bgModes=['paper','sepia','dark'];
 const BG_COLORS={paper:{bg:'#fdfaf3',fg:'#2b2b2b'},sepia:{bg:'#f4ecd8',fg:'#3b2f1a'},dark:{bg:'#111',fg:'#eee'}};
 
+const FONT_SIZE_MIN=50;
+const FONT_SIZE_MAX=200;
+const FONT_SIZE_STEP=10;
+const LOCATIONS_SAMPLE_SIZE=1000;
+
 let fontSize=parseInt(localStorage.getItem('epub_fontSize')||'100',10);
 let bgIdx=bgModes.indexOf(localStorage.getItem('epub_bgMode')||'paper');
 if(bgIdx<0) bgIdx=0;
@@ -94,9 +99,9 @@ function wirePaging(){
       case 'ArrowRight': case 'PageDown': case ' ': rendition.next(); handled=true; break;
       case 't': case 'T': tocVisible=!tocVisible; updateTocVisibility(); handled=true; break;
       case 'b': case 'B': bgIdx=(bgIdx+1)%bgModes.length; applyBackground(bgModes[bgIdx]); applyFontSize(); handled=true; break;
-      case '+': fontSize=Math.min(fontSize+10,200); applyFontSize(); handled=true; break;
-      case '=': if(e.shiftKey){fontSize=Math.min(fontSize+10,200); applyFontSize(); handled=true;} break;
-      case '-': case '_': fontSize=Math.max(fontSize-10,50); applyFontSize(); handled=true; break;
+      case '+': fontSize=Math.min(fontSize+FONT_SIZE_STEP,FONT_SIZE_MAX); applyFontSize(); handled=true; break;
+      case '=': if(e.shiftKey){fontSize=Math.min(fontSize+FONT_SIZE_STEP,FONT_SIZE_MAX); applyFontSize(); handled=true;} break;
+      case '-': case '_': fontSize=Math.max(fontSize-FONT_SIZE_STEP,FONT_SIZE_MIN); applyFontSize(); handled=true; break;
     }
     if(handled){ e.preventDefault(); e.stopPropagation(); }
   };
@@ -197,8 +202,8 @@ async function openBookFromDB(id){
   wirePaging();
 
   // Font size buttons
-  fontPlus.onclick=()=>{ fontSize=Math.min(fontSize+10,200); applyFontSize(); };
-  fontMinus.onclick=()=>{ fontSize=Math.max(fontSize-10,50); applyFontSize(); };
+  fontPlus.onclick=()=>{ fontSize=Math.min(fontSize+FONT_SIZE_STEP,FONT_SIZE_MAX); applyFontSize(); };
+  fontMinus.onclick=()=>{ fontSize=Math.max(fontSize-FONT_SIZE_STEP,FONT_SIZE_MIN); applyFontSize(); };
 
   bgToggle.onclick=()=>{
     if(!rendition) return;
@@ -210,7 +215,7 @@ async function openBookFromDB(id){
   tocToggle.onclick=()=>{ tocVisible=!tocVisible; updateTocVisibility(); };
 
   // Progress + persist CFI
-  try{ locations=await book.locations.generate(1000); }catch{}
+  try{ locations=await book.locations.generate(LOCATIONS_SAMPLE_SIZE); }catch{}
   rendition.on('relocated', async(loc)=>{
     try{
       const pct=book.locations?.percentageFromCfi?.(loc.start.cfi)||0;

@@ -83,30 +83,8 @@ async function openCollectionDetail(col){
     return;
   }
   for(const r of books){
-    const card=document.createElement('div'); card.className='card';
-    const covWrap=document.createElement('div'); covWrap.className='coverWrap';
-    const img=document.createElement('img'); img.className='cover'; img.alt=r.title||'Book cover';
-    if(r.coverBlob){
-      const blobUrl=URL.createObjectURL(r.coverBlob);
-      img.src=blobUrl;
-      img.onload=()=>URL.revokeObjectURL(blobUrl);
-      img.onerror=()=>URL.revokeObjectURL(blobUrl);
-    }
-    covWrap.appendChild(img);
-    const meta=document.createElement('div'); meta.className='meta';
-    const title=document.createElement('div'); title.className='title'; title.textContent=r.title||'Untitled'; title.title=r.title||'Untitled';
-    const author=document.createElement('div'); author.className='author'; author.textContent=r.author||''; author.title=r.author||'';
-    const row=document.createElement('div'); row.className='row';
-    const readBtn=document.createElement('button'); readBtn.className='btn-blue'; readBtn.textContent=r.lastCfi?'Continue':'Read';
-    readBtn.onclick=()=>openBookFromDB(r.id);
-    row.append(readBtn);
-
-    const moreBtn=document.createElement('button'); moreBtn.className='btn-more'; moreBtn.textContent='···';
-    moreBtn.title='More options';
+    const {card, moreBtn}=createBookCard(r, openBookFromDB);
     moreBtn.onclick=(e)=>{ e.stopPropagation(); showCollectionDetailMenu(moreBtn, r, card, col); };
-
-    meta.append(title, author, row);
-    card.append(covWrap, meta, moreBtn);
     detailGrid.appendChild(card);
   }
 }

@@ -134,10 +134,14 @@
       display: block;
     }
     #collectionsView {
-      background: radial-gradient(1200px 600px at 50% -200px, #f0fdf4, #fff);
+      background: radial-gradient(1200px 600px at 50% -200px, #eef2ff, #fff);
       display: none;
     }
     #libToolbar { display:flex; gap:8px; align-items:center; margin-bottom: 12px; }
+    .toolbar-divider {
+      border: none; border-top: 1px solid var(--border);
+      margin: 0 0 16px 0;
+    }
     #grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
     #collectionsToolbar { display:flex; gap:8px; align-items:center; margin-bottom: 12px; }
     #collectionsGrid { display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }

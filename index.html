@@ -179,6 +179,8 @@
     let currentBookId=null;
     let fontSize=100;
     let tocVisible=true;
+    let _keyHandler=null;   // stored so we can remove it before re-adding
+    let _resizeHandler=null; // stored so we can remove it before re-adding
 
     const bgModes=['paper','sepia','dark']; let bgIdx=0;
     const BG_COLORS={paper:{bg:'#fdfaf3',fg:'#2b2b2b'},sepia:{bg:'#f4ecd8',fg:'#3b2f1a'},dark:{bg:'#111',fg:'#eee'}};
@@ -321,7 +323,10 @@
       prevBtn.onclick=()=>rendition.prev();
       nextBtn.onclick=()=>rendition.next();
 
-      document.addEventListener('keydown',(e)=>{
+      // Remove any previously registered keydown handler to prevent stacking
+      if(_keyHandler) document.removeEventListener('keydown', _keyHandler);
+
+      _keyHandler=(e)=>{
         if(viewerEl.style.display!=='block') return;
 
         let handled = false;
@@ -361,7 +366,9 @@
           e.preventDefault();
           e.stopPropagation();
         }
-      });
+      };
+
+      document.addEventListener('keydown', _keyHandler);
     }
 
     function applyFontSize(){
@@ -400,6 +407,8 @@
     toLibraryBtn.onclick=async()=>{ await unloadBook(); renderLibrary(); };
 
     async function unloadBook(){
+      if(_keyHandler){ document.removeEventListener('keydown', _keyHandler); _keyHandler=null; }
+      if(_resizeHandler){ window.removeEventListener('resize', _resizeHandler); _resizeHandler=null; }
       try{ await rendition?.destroy(); }catch{}
       try{ await book?.destroy(); }catch{}
       book=null; rendition=null; locations=null;
@@ -466,7 +475,10 @@
         }catch{}
       });
 
-      window.addEventListener('resize', ()=>rendition.resize());
+      // Remove any previously registered resize handler to prevent stacking
+      if(_resizeHandler) window.removeEventListener('resize', _resizeHandler);
+      _resizeHandler=()=>rendition.resize();
+      window.addEventListener('resize', _resizeHandler);
 
       // Search
       searchBox.onchange=async()=>{

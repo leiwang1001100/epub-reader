@@ -3,7 +3,7 @@
 > A lightweight, offline EPUB reader that runs entirely in your browser.  
 > No server required — works directly with `file://`.
 
-![Version](https://img.shields.io/badge/version-v1.3.0-blue)
+![Version](https://img.shields.io/badge/version-v1.3.2-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
@@ -14,10 +14,12 @@
 - Import multiple EPUB files at once
 - Book cards with cover art, title, author, file size and date added
 - Long titles truncated to 2 lines with full title on hover
-- **Pagination** — choose 20 / 50 / 100 books per page
-- Page preference saved across sessions
+- **Search** — filter books by title or author as you type
+- **Sort** — by Newest, Oldest, Title A–Z, Title Z–A
+- **Collection filter** — show all, uncategorised, or a specific collection
+- **Pagination** — choose 20 / 50 / 100 books per page, preference saved across sessions
 - **Collections** — organise books into named folders
-- Assign/move books to collections via the `···` menu on each card
+- Assign/move books to collections via the `···` menu on each card (scrollable, keyboard navigable)
 - Delete books with confirmation dialog
 
 ### 📁 Collections
@@ -40,6 +42,8 @@
 
 ### ⌨️ Keyboard Shortcuts
 
+**Reader:**
+
 | Key | Action |
 |-----|--------|
 | `←` / `PageUp` | Previous page |
@@ -48,6 +52,14 @@
 | `B` | Cycle background theme |
 | `+` / `Shift+=` | Increase font size |
 | `-` / `_` | Decrease font size |
+
+**`···` More Menu:**
+
+| Key | Action |
+|-----|--------|
+| `↑` / `↓` | Navigate menu items |
+| `Enter` / `Space` | Select focused item |
+| `Escape` | Close menu |
 
 ---
 

@@ -8,6 +8,13 @@ function escapeHtml(str){return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').r
 
 const MAX_COL_NAME=50;
 
+// Generate SHA-256 hash of an ArrayBuffer
+async function sha256(buffer){
+  const hashBuffer=await crypto.subtle.digest('SHA-256', buffer);
+  const hashArray=Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
 async function promptNewCollection(){
   const name=(prompt('Collection name (max 50 characters):') || '').trim();
   if(!name) return null;

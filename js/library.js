@@ -114,13 +114,37 @@ function initImport(){
   importBtn.onclick=()=>importInput.click();
   importInput.addEventListener('change', async ()=>{
     const files=Array.from(importInput.files||[]); if(!files.length)return;
-    await openDB(); statusEl.textContent='Importing…';
+    await openDB();
+    const existingBooks=await idbGetAll();
+    let imported=0, skipped=0;
+
     for(const f of files){
+      statusEl.textContent=`Importing ${f.name}…`;
       const buf=await f.arrayBuffer();
-      const rec=await extractBookRecord(buf,f.name,f.size);
+      const hash=await sha256(buf);
+
+      // Check for duplicate by hash
+      const duplicate=existingBooks.find(b=>b.hash===hash);
+      if(duplicate){
+        const replace=confirm(`"${duplicate.title||f.name}" is already in your library.\n\nDo you want to replace it?`);
+        if(replace){
+          await idbDelete(duplicate.id);
+        } else {
+          skipped++;
+          continue;
+        }
+      }
+
+      const rec=await extractBookRecord(buf, f.name, f.size);
       await idbAddBook(rec);
+      imported++;
     }
+
     statusEl.textContent='';
+    const msg=[];
+    if(imported) msg.push(`${imported} book${imported!==1?'s':''} imported`);
+    if(skipped) msg.push(`${skipped} skipped`);
+    if(msg.length) flashStatus(msg.join(', '));
     libPage=1;
     await renderLibrary();
     importInput.value='';
@@ -162,10 +186,12 @@ async function extractBookRecord(buf,filename,size){
     }
   }catch(e){ console.warn('Cover extraction failed:',e); }
   try{ await b.destroy(); }catch{}
+  const hash=await sha256(buf);
   return {
     id: crypto.randomUUID(),
     title, author, size,
     filename,
+    hash,
     bufBlob: new Blob([buf]),
     coverBlob,
     createdAt: Date.now(),

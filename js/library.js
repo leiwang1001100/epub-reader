@@ -23,7 +23,7 @@ async function renderLibrary(){
   libColFilter.innerHTML='<option value="">📁 All Collections</option>';
   libColFilter.innerHTML+='<option value="__none__">🚫 Uncategorised</option>';
   allCols.sort((a,b)=>a.name.localeCompare(b.name)).forEach(c=>{
-    libColFilter.innerHTML+=`<option value="${c.id}">${escapeHtml(c.name)}</option>`;
+    libColFilter.innerHTML+=`<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`;
   });
   libColFilter.value=prevColVal||'';
 

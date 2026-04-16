@@ -1,75 +1,139 @@
-# 📖 EPUB Reader + Library (Offline, Browser-Based)
+# 📖 EPUB Reader + Library
 
-A lightweight, offline EPUB reader that runs entirely in your browser.  
-Books are imported, stored locally with **IndexedDB**, and available in your library even after reloads.  
-No server required — works with `file://`.
+> A lightweight, offline EPUB reader that runs entirely in your browser.  
+> No server required — works directly with `file://`.
+
+![Version](https://img.shields.io/badge/version-v1.3.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
-## 🚀 Features
+## ✨ Features
 
-- **Import EPUBs** from your computer
-- **Library view** with covers, metadata, delete & continue reading
-- **Reader view** with:
-  - Table of Contents (TOC) sidebar (toggleable)
-  - Pagination or scrolling mode
-  - Adjustable font size
-  - Background themes: Paper, Sepia, Dark
-  - Smooth navigation with on-screen or keyboard controls
-- **Local persistence** using IndexedDB
-- **No backend** — works offline, directly in browser
+### 📚 Library
+- Import multiple EPUB files at once
+- Book cards with cover art, title, author, file size and date added
+- Long titles truncated to 2 lines with full title on hover
+- **Pagination** — choose 20 / 50 / 100 books per page
+- Page preference saved across sessions
+- **Collections** — organise books into named folders
+- Assign/move books to collections via the `···` menu on each card
+- Delete books with confirmation dialog
+
+### 📁 Collections
+- Create named collections (max 50 characters, no duplicates)
+- Collections display cover art of the most recently added book
+- Paginated collection grid (20 / 50 / 100 per page)
+- Open a collection to view its books
+- Remove books from a collection without deleting them
+- Delete a collection — books return to the main library
+
+### 📖 Reader
+- Paginated and scrollable reading modes
+- Adjustable font size (50% – 200%)
+- Background themes: **Paper**, **Sepia**, **Dark**
+- Table of Contents (TOC) sidebar — toggleable
+- Reading progress bar with percentage
+- Resumes at your last reading position automatically
+- Full-text search within a book (press `Enter` to search)
+- Font size and background theme persisted across sessions
+
+### ⌨️ Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| `←` / `PageUp` | Previous page |
+| `→` / `PageDown` / `Space` | Next page |
+| `T` | Toggle TOC sidebar |
+| `B` | Cycle background theme |
+| `+` / `Shift+=` | Increase font size |
+| `-` / `_` | Decrease font size |
 
 ---
 
 ## 🛠️ Setup
 
-1. Clone or download the project.
-2. Open `index.html` directly in your browser (`file://` works).
-3. Import EPUBs via the **Import EPUBs** button.
-4. Books are saved in your browser storage.
+1. Clone or download the repository:
+   ```bash
+   git clone https://github.com/leiwang1001100/epub-reader.git
+   ```
+2. Open `index.html` directly in your browser — no server needed.
+3. Click **Import EPUBs** to add books from your computer.
+
+> 💡 Books are stored locally in your browser's **IndexedDB** and persist across sessions.
 
 ---
 
-## 📚 Usage
+## 🗂️ Project Structure
 
-- **Library view**
-  - Import EPUBs with the **Import EPUBs** button.
-  - Click a book card to start reading.
-  - Continue reading resumes at your last position.
-  - Delete removes a book from storage.
-
-- **Reader view**
-  - **TOC sidebar** for quick navigation.
-  - **Controls bar** (bottom):
-    - ⬅️ Prev / ➡️ Next page
-    - Hide/Show TOC
-    - Font size (A− / A+)
-    - Background cycling (Paper → Sepia → Dark)
-    - Scroll / Paginated toggle
-
----
-
-## ⌨️ Keyboard Shortcuts
-
-| Key | Action |
-|-----|--------|
-| ← / PageUp | Previous page |
-| → / PageDown / Space | Next page |
-| **T** | Toggle TOC sidebar |
-| **B** | Cycle background (Paper → Sepia → Dark) |
-| **+ / Shift+=** | Increase font size |
-| **- / _** | Decrease font size |
+```
+epub_app/
+├── index.html          # HTML structure only
+├── styles.css          # All CSS styles
+├── js/
+│   ├── db.js           # IndexedDB helpers (openDB, idbAddBook, etc.)
+│   ├── utils.js        # Shared utilities (escapeHtml, flashStatus, etc.)
+│   ├── library.js      # Home library view & import logic
+│   ├── collections.js  # Collections view, menus & detail view
+│   ├── reader.js       # Book reader, TOC, search, progress
+│   └── app.js          # App boot, element refs, event wiring
+└── README.md
+```
 
 ---
 
 ## 🧩 Notes
 
-- Works offline — all data stored in your browser.
-- To reset, clear site data in your browser dev tools.
-- Best tested in modern browsers (Chrome, Edge, Firefox).
+- Works fully offline — all data stored in your browser.
+- Graphic novels in fixed-layout EPUB format may not render correctly (PDF format recommended for comics).
+- To reset all data, clear site data in your browser DevTools → Application → IndexedDB.
+- Best tested in modern browsers: **Chrome**, **Edge**, **Firefox**.
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Here's how to get started:
+
+1. **Fork** the repository on GitHub:  
+   👉 https://github.com/leiwang1001100/epub-reader
+
+2. **Clone** your fork locally:
+   ```bash
+   git clone https://github.com/<your-username>/epub-reader.git
+   ```
+
+3. **Create a branch** for your feature or fix:
+   ```bash
+   git checkout -b feat/your-feature-name
+   ```
+
+4. **Make your changes** and test them locally by opening `index.html` in your browser.
+
+5. **Commit** your changes with a clear message:
+   ```bash
+   git commit -m "feat: describe your change"
+   ```
+
+6. **Push** your branch to your fork:
+   ```bash
+   git push origin feat/your-feature-name
+   ```
+
+7. **Open a Pull Request** against the `main` branch of the original repository.
+
+### Commit message conventions
+
+| Prefix | When to use |
+|--------|-------------|
+| `feat:` | New feature |
+| `fix:` | Bug fix |
+| `refactor:` | Code restructuring (no behaviour change) |
+| `style:` | CSS/visual changes only |
+| `docs:` | Documentation updates |
 
 ---
 
 ## 📜 License
 
-MIT — use freely for personal or educational projects.
+MIT — free to use for personal or educational projects.

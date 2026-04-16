@@ -46,7 +46,7 @@
 
     /* Reading progress bar */
     #progressBar {
-      position: fixed; top: 56px; left: 0; right: 0;
+      position: fixed; top: 56px; right: 0;
       height: 3px; background: #e5e7eb; z-index: 30; display: none;
     }
     #progressFill {
@@ -60,7 +60,7 @@
       display: none; background: #fff; padding: 0 4px; border-radius: 4px;
     }
 
-    #viewer { position: fixed; inset: 59px 0 64px 0; display:none; }
+    /* #viewer positioning moved to sidebar-aware rules below */
     #controls {
       position: fixed; bottom: 0; left: 0; right: 0; padding: 0.75rem;
       display:flex; gap:0.6rem; justify-content:center; flex-wrap: wrap;
@@ -107,7 +107,7 @@
     /* Library screen */
     #library {
       position: fixed; inset: 0 0 0 var(--sidebar-w);
-      padding: 16px; overflow:auto;
+      padding: 16px; overflow:auto; z-index: 10;
       background: radial-gradient(1200px 600px at 50% -200px, #eef2ff, #fff);
     }
     #libToolbar { display:flex; gap:8px; align-items:center; margin-bottom: 12px; }
@@ -116,7 +116,7 @@
     /* Collections screen */
     #collectionsView {
       position: fixed; inset: 0 0 0 var(--sidebar-w);
-      padding: 16px; overflow:auto; display:none;
+      padding: 16px; overflow:auto; display:none; z-index: 10;
       background: radial-gradient(1200px 600px at 50% -200px, #f0fdf4, #fff);
     }
     #collectionsToolbar { display:flex; gap:8px; align-items:center; margin-bottom: 12px; }
@@ -278,12 +278,18 @@
     function openDB(){return new Promise((resolve,reject)=>{
       const req=indexedDB.open(DB_NAME,DB_VERSION);
       req.onupgradeneeded=(e)=>{
-        const d=req.result;
-        if(!d.objectStoreNames.contains(STORE)){d.createObjectStore(STORE,{keyPath:'id'}).createIndex?.('createdAt','createdAt');}
-        if(!d.objectStoreNames.contains(COL_STORE)){d.createObjectStore(COL_STORE,{keyPath:'id'});}
+        const d=e.target.result;
+        if(!d.objectStoreNames.contains(STORE)){
+          const s=d.createObjectStore(STORE,{keyPath:'id'});
+          try{ s.createIndex('createdAt','createdAt'); }catch{}
+        }
+        if(!d.objectStoreNames.contains(COL_STORE)){
+          d.createObjectStore(COL_STORE,{keyPath:'id'});
+        }
       };
-      req.onsuccess=()=>{db=req.result;resolve(db)};
-      req.onerror=()=>reject(req.error);
+      req.onsuccess=(e)=>{db=e.target.result;resolve(db);};
+      req.onerror=(e)=>{ console.error('IndexedDB error:',e.target.error); reject(e.target.error); };
+      req.onblocked=()=>{ console.warn('IndexedDB blocked — please close other tabs running this app.'); };
     });}
     function idbAddBook(record){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);tx.objectStore(STORE).put(record);});}
     function idbGetAll(){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readonly');const rq=tx.objectStore(STORE).getAll();rq.onsuccess=()=>res(rq.result||[]);rq.onerror=()=>rej(rq.error);});}
@@ -512,7 +518,7 @@
     /********** Collection picker on book cards **********/
     let activePicker=null;
     function closePicker(){ if(activePicker){ activePicker.remove(); activePicker=null; } }
-    document.addEventListener('click', ()=>closePicker());
+    document.addEventListener('click', (e)=>{ if(activePicker && !activePicker.contains(e.target)) closePicker(); });
 
     async function showCollectionPicker(btn, book){
       closePicker();
@@ -836,8 +842,17 @@
     window.addEventListener('unhandledrejection', e=>console.error('Promise rejection:', e.reason));
 
     (async function init(){
-      await openDB();
-      await renderLibrary();
+      try{
+        await openDB();
+        await renderLibrary();
+      }catch(err){
+        console.error('Init failed:', err);
+        document.body.innerHTML=`<div style="padding:2rem;font-family:system-ui;color:#b91c1c;">
+          <h2>⚠️ Failed to initialise app</h2>
+          <p>${err?.message||err}</p>
+          <p>Try opening the browser console for more details.</p>
+        </div>`;
+      }
     })();
   </script>
 </body>

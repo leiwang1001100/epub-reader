@@ -35,7 +35,7 @@
       <button id="importBtn" class="btn-purple">Import EPUBs</button>
       <span class="small" id="libHint">Imported books are saved locally and appear here next time.</span>
       <span class="spacer"></span>
-      <span class="small-badge" title="App version">v1.1.8</span>
+      <span class="small-badge" title="App version">v1.1.9</span>
     </div>
     <div id="grid"></div>
   </div>
@@ -232,6 +232,29 @@
       }
     }
 
+    /********** Utilities **********/
+    function escapeHtml(str){
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
+    const MAX_COL_NAME=50;
+
+    async function promptNewCollection(){
+      const name=(prompt('Collection name (max 50 characters):') || '').trim();
+      if(!name) return null;
+      if(name.length > MAX_COL_NAME){
+        alert(`Collection name is too long (max ${MAX_COL_NAME} characters).`); return null;
+      }
+      // Check for duplicates
+      const existing=await idbGetAllCols();
+      if(existing.some(c=>c.name.toLowerCase()===name.toLowerCase())){
+        alert(`A collection named "${name}" already exists.`); return null;
+      }
+      const col={ id:crypto.randomUUID(), name, createdAt:Date.now() };
+      await idbAddCol(col);
+      return col;
+    }
+
     /********** Sidebar navigation **********/
     function setSidebarActive(view){
       sideHome.classList.toggle('active', view==='home');
@@ -281,7 +304,7 @@
         const delBtn=document.createElement('button'); delBtn.className='btn-orange'; delBtn.textContent='Delete'; delBtn.title='Delete collection';
         delBtn.onclick=async(e)=>{
           e.stopPropagation();
-          if(!confirm(`Delete collection "${col.name}"?\nBooks will remain in your library.`)) return;
+          if(!confirm(`Delete collection "${escapeHtml(col.name)}"?\nBooks will remain in your library.`)) return;
           // unassign all books in this collection
           const toUpdate=books.filter(b=>b.collectionId===col.id);
           await Promise.all(toUpdate.map(b=>{ b.collectionId=null; return idbAddBook(b); }));
@@ -355,9 +378,8 @@
     backToCollections.onclick=()=>{ collectionDetail.style.display='none'; collectionsGrid.style.display='grid'; renderCollections(); };
 
     newCollectionBtn.onclick=async()=>{
-      const name=(prompt('Collection name:') || '').trim();
-      if(!name) return;
-      await idbAddCol({ id:crypto.randomUUID(), name, createdAt:Date.now() });
+      const col=await promptNewCollection();
+      if(!col) return;
       renderCollections();
     };
 
@@ -389,15 +411,36 @@
         for(const col of cols.sort((a,b)=>a.name.localeCompare(b.name))){
           const item=document.createElement('div'); item.className='more-menu-item';
           if(book.collectionId===col.id) item.style.color='#4f46e5';
-          item.innerHTML=`<span>📁</span><span>${col.name}${book.collectionId===col.id?' ✓':''}</span>`;
+          item.innerHTML=`<span>📁</span><span>${escapeHtml(col.name)}${book.collectionId===col.id?' ✓':''}</span>`;
           item.onclick=async()=>{ book.collectionId=col.id; await idbAddBook(book); closeMenu(); renderLibrary(); };
           menu.appendChild(item);
         }
       } else {
         const empty=document.createElement('div'); empty.className='more-menu-item';
-        empty.style.color='var(--muted)'; empty.textContent='No collections yet';
+        empty.style.cssText='color:var(--muted);cursor:default;';
+        empty.innerHTML=`<span>📭</span><span>No collections yet</span>`;
         menu.appendChild(empty);
       }
+
+      // Divider
+      const divider=document.createElement('div');
+      divider.style.cssText='border-top:1px solid var(--border);margin:4px 0;';
+      menu.appendChild(divider);
+
+      // ＋ New Collection option
+      const newItem=document.createElement('div'); newItem.className='more-menu-item';
+      newItem.style.color='#4f46e5';
+      newItem.innerHTML=`<span>＋</span><span>New Collection</span>`;
+      newItem.onclick=async()=>{
+        closeMenu();
+        const col=await promptNewCollection();
+        if(!col) return;
+        book.collectionId=col.id;
+        await idbAddBook(book);
+        renderLibrary();
+        flashStatus(`Added to "${escapeHtml(col.name)}"`);
+      };
+      menu.appendChild(newItem);
 
       container.appendChild(menu);
       activeMenu=menu;

@@ -6,8 +6,36 @@
   <title>EPUB Reader + Library</title>
 
   <style>
-    :root { --border:#e5e7eb; --muted:#6b7280; }
+    :root { --border:#e5e7eb; --muted:#6b7280; --sidebar-w:56px; }
     body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto; color:#111; }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0;
+      width: var(--sidebar-w);
+      background: #1e1b4b;
+      display: flex; flex-direction: column; align-items: center;
+      padding-top: 12px; gap: 6px;
+      z-index: 100;
+    }
+    .sidebar-btn {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: transparent; border: none; box-shadow: none;
+      min-width: unset; padding: 0;
+      display: grid; place-items: center;
+      font-size: 20px; color: #a5b4fc; cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .sidebar-btn:hover { background: #312e81; color: #fff; transform: none; box-shadow: none; filter: none; }
+    .sidebar-btn.active { background: #4f46e5; color: #fff; }
+    .sidebar-btn[title]:hover::after {
+      content: attr(title);
+      position: absolute; left: calc(var(--sidebar-w) + 6px);
+      background: #1e1b4b; color: #fff;
+      padding: 4px 8px; border-radius: 6px; font-size: 12px;
+      white-space: nowrap; pointer-events: none; z-index: 200;
+    }
+    .sidebar-btn { position: relative; }
 
     header {
       padding: 0.75rem 1rem;
@@ -78,12 +106,48 @@
 
     /* Library screen */
     #library {
-      position: fixed; inset: 56px 0 0 0;
+      position: fixed; inset: 0 0 0 var(--sidebar-w);
       padding: 16px; overflow:auto;
       background: radial-gradient(1200px 600px at 50% -200px, #eef2ff, #fff);
     }
     #libToolbar { display:flex; gap:8px; align-items:center; margin-bottom: 12px; }
     #grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
+
+    /* Collections screen */
+    #collectionsView {
+      position: fixed; inset: 0 0 0 var(--sidebar-w);
+      padding: 16px; overflow:auto; display:none;
+      background: radial-gradient(1200px 600px at 50% -200px, #f0fdf4, #fff);
+    }
+    #collectionsToolbar { display:flex; gap:8px; align-items:center; margin-bottom: 12px; }
+    #collectionsGrid { display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+    .col-card {
+      border:1px solid var(--border); border-radius:14px; background:#fff;
+      padding: 16px; display:flex; flex-direction:column; gap:8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,.05); cursor:pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .col-card:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0,0,0,.1); }
+    .col-icon { font-size: 32px; }
+    .col-name { font-weight:700; font-size:15px; }
+    .col-count { font-size:12px; color:var(--muted); }
+    .col-card .row { margin-top:auto; }
+
+    /* Collection assign dropdown */
+    .col-picker {
+      position:absolute; z-index:50; background:#fff; border:1px solid var(--border);
+      border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.12);
+      min-width:180px; padding:6px 0; font-size:13px;
+    }
+    .col-picker-item {
+      padding:8px 14px; cursor:pointer; display:flex; align-items:center; gap:8px;
+    }
+    .col-picker-item:hover { background:#f5f3ff; }
+    .col-picker-item.selected { color:#4f46e5; font-weight:600; }
+    .col-assign-btn {
+      min-width:unset; padding:0.3rem 0.6rem; font-size:11px;
+      --btn1:#7c3aed; --btn2:#6d28d9; border-radius:8px;
+    }
     .card { border:1px solid var(--border); border-radius:14px; background:#fff; overflow:hidden; display:flex; flex-direction:column; box-shadow: 0 4px 10px rgba(0,0,0,.05); }
     .coverWrap { background: linear-gradient(180deg,#f8fafc,#eef2ff); display:grid; place-items:center; aspect-ratio: 2/3; }
     .cover { max-width: 100%; max-height: 100%; object-fit: contain; display:block; }
@@ -122,10 +186,16 @@
 
     #searchBox { flex: 1; max-width: 420px; }
 
+    /* Header and viewer account for sidebar */
+    header { padding-left: calc(var(--sidebar-w) + 0.75rem); }
+    #viewer { position: fixed; inset: 59px 0 64px var(--sidebar-w); display:none; }
+    #progressBar { left: var(--sidebar-w); }
+    #progressLabel { right: 8px; }
+    #controls { left: var(--sidebar-w); }
+
     /* Safe header-hide in Library mode */
     body.mode-library header { display: none; }
-    body.mode-library #library { inset: 0 0 0 0; }
-    body:not(.mode-library) #library { inset: 56px 0 0 0; }
+    body.mode-library #library { inset: 0 0 0 var(--sidebar-w); }
   </style>
 
   <!-- Needed for file:// -->
@@ -135,6 +205,12 @@
 <body class="mode-library">
   <!-- File input off-screen but enabled -->
   <input id="importInput" type="file" accept=".epub" multiple />
+
+  <!-- Sidebar -->
+  <nav id="sidebar">
+    <button class="sidebar-btn active" id="sideHome" title="All Books">🏠</button>
+    <button class="sidebar-btn" id="sideCollections" title="Collections">📁</button>
+  </nav>
 
   <header>
     <button id="toLibrary" class="btn-green" style="display:none;">← Library</button>
@@ -150,9 +226,28 @@
       <button id="importBtn" class="btn-purple">Import EPUBs</button>
       <span class="small" id="libHint">Imported books are saved locally and appear here next time.</span>
       <span class="spacer"></span>
-      <span class="small-badge" title="App version">v1.0.5</span>
+      <span class="small-badge" title="App version">v1.1.0</span>
     </div>
     <div id="grid"></div>
+  </div>
+
+  <!-- Collections view -->
+  <div id="collectionsView">
+    <div id="collectionsToolbar">
+      <button id="newCollectionBtn" class="btn-green">＋ New Collection</button>
+      <span class="small" id="collectionsHint">Organise your books into collections.</span>
+      <span class="spacer"></span>
+    </div>
+    <div id="collectionsGrid"></div>
+    <!-- Collection detail (books inside a collection) -->
+    <div id="collectionDetail" style="display:none;">
+      <div id="detailToolbar" style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+        <button id="backToCollections" class="btn-blue">← Collections</button>
+        <span id="detailTitle" style="font-weight:700;font-size:18px;"></span>
+        <span class="spacer"></span>
+      </div>
+      <div id="detailGrid" class="grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;"></div>
+    </div>
   </div>
 
   <!-- Progress bar -->
@@ -179,12 +274,25 @@
 
   <script>
     /********** IndexedDB **********/
-    const DB_NAME='epubLibrary', DB_VERSION=1, STORE='books'; let db;
-    function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,DB_VERSION);req.onupgradeneeded=()=>{const d=req.result;if(!d.objectStoreNames.contains(STORE)){d.createObjectStore(STORE,{keyPath:'id'}).createIndex?.('createdAt','createdAt');}};req.onsuccess=()=>{db=req.result;resolve(db)};req.onerror=()=>reject(req.error);});}
+    const DB_NAME='epubLibrary', DB_VERSION=2, STORE='books', COL_STORE='collections'; let db;
+    function openDB(){return new Promise((resolve,reject)=>{
+      const req=indexedDB.open(DB_NAME,DB_VERSION);
+      req.onupgradeneeded=(e)=>{
+        const d=req.result;
+        if(!d.objectStoreNames.contains(STORE)){d.createObjectStore(STORE,{keyPath:'id'}).createIndex?.('createdAt','createdAt');}
+        if(!d.objectStoreNames.contains(COL_STORE)){d.createObjectStore(COL_STORE,{keyPath:'id'});}
+      };
+      req.onsuccess=()=>{db=req.result;resolve(db)};
+      req.onerror=()=>reject(req.error);
+    });}
     function idbAddBook(record){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);tx.objectStore(STORE).put(record);});}
     function idbGetAll(){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readonly');const rq=tx.objectStore(STORE).getAll();rq.onsuccess=()=>res(rq.result||[]);rq.onerror=()=>rej(rq.error);});}
     function idbGet(id){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readonly');const rq=tx.objectStore(STORE).get(id);rq.onsuccess=()=>res(rq.result||null);rq.onerror=()=>rej(rq.error);});}
     function idbDelete(id){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).delete(id);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);});}
+    // Collections CRUD
+    function idbAddCol(col){return new Promise((res,rej)=>{const tx=db.transaction(COL_STORE,'readwrite');tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);tx.objectStore(COL_STORE).put(col);});}
+    function idbGetAllCols(){return new Promise((res,rej)=>{const tx=db.transaction(COL_STORE,'readonly');const rq=tx.objectStore(COL_STORE).getAll();rq.onsuccess=()=>res(rq.result||[]);rq.onerror=()=>rej(rq.error);});}
+    function idbDeleteCol(id){return new Promise((res,rej)=>{const tx=db.transaction(COL_STORE,'readwrite');tx.objectStore(COL_STORE).delete(id);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);});}
 
     /********** Elements **********/
     const toLibraryBtn=document.getElementById('toLibrary');
@@ -193,6 +301,15 @@
     const libraryEl=document.getElementById('library');
     const gridEl=document.getElementById('grid');
     const libHint=document.getElementById('libHint');
+    const collectionsView=document.getElementById('collectionsView');
+    const collectionsGrid=document.getElementById('collectionsGrid');
+    const newCollectionBtn=document.getElementById('newCollectionBtn');
+    const collectionDetail=document.getElementById('collectionDetail');
+    const detailGrid=document.getElementById('detailGrid');
+    const detailTitle=document.getElementById('detailTitle');
+    const backToCollections=document.getElementById('backToCollections');
+    const sideHome=document.getElementById('sideHome');
+    const sideCollections=document.getElementById('sideCollections');
 
     const viewerEl=document.getElementById('viewer');
     const tocEl=document.getElementById('toc');
@@ -249,6 +366,7 @@
     async function renderLibrary(){
       document.body.classList.add('mode-library');
       libraryEl.style.display='block';
+      collectionsView.style.display='none';
       viewerEl.style.display='none';
       controls.style.display='none';
       toLibraryBtn.style.display='none';
@@ -256,6 +374,7 @@
       importBtn.style.display='inline-block';
       progressBar.style.display='none';
       progressLabel.style.display='none';
+      setSidebarActive('home');
       metaEl.textContent=''; statusEl.textContent='';
 
       const rows=(await idbGetAll()).sort((a,b)=>b.createdAt-a.createdAt);
@@ -285,10 +404,144 @@
         };
         row.append(openBtn,delBtn);
 
-        meta.append(title,author,small,row);
+        // Collection assign button
+        const colRow=document.createElement('div'); colRow.className='row'; colRow.style.marginTop='4px';
+        const colBtn=document.createElement('button'); colBtn.className='col-assign-btn';
+        colBtn.textContent=r.collectionId ? '📁 Move collection' : '📁 Add to collection';
+        colBtn.onclick=(e)=>{ e.stopPropagation(); showCollectionPicker(colBtn, r); };
+        colRow.appendChild(colBtn);
+
+        meta.append(title,author,small,row,colRow);
         card.append(covWrap,meta);
         gridEl.appendChild(card);
       }
+    }
+
+    /********** Sidebar navigation **********/
+    function setSidebarActive(view){
+      sideHome.classList.toggle('active', view==='home');
+      sideCollections.classList.toggle('active', view==='collections');
+    }
+    sideHome.onclick=()=>{ collectionsView.style.display='none'; renderLibrary(); setSidebarActive('home'); };
+    sideCollections.onclick=()=>{ renderLibrary_hide(); renderCollections(); setSidebarActive('collections'); };
+
+    function renderLibrary_hide(){
+      libraryEl.style.display='none';
+      document.body.classList.add('mode-library');
+    }
+
+    /********** Collections **********/
+    async function renderCollections(){
+      collectionsView.style.display='block';
+      collectionDetail.style.display='none';
+      collectionsGrid.style.display='grid';
+      const [cols, books] = await Promise.all([idbGetAllCols(), idbGetAll()]);
+      collectionsGrid.innerHTML='';
+      if(cols.length===0){
+        collectionsGrid.innerHTML='<p style="color:var(--muted)">No collections yet. Click <b>＋ New Collection</b> to create one.</p>';
+        return;
+      }
+      for(const col of cols.sort((a,b)=>a.name.localeCompare(b.name))){
+        const count=books.filter(b=>b.collectionId===col.id).length;
+        const card=document.createElement('div'); card.className='col-card';
+        const icon=document.createElement('div'); icon.className='col-icon'; icon.textContent='📁';
+        const name=document.createElement('div'); name.className='col-name'; name.textContent=col.name;
+        const cnt=document.createElement('div'); cnt.className='col-count'; cnt.textContent=`${count} book${count!==1?'s':''}`;
+        const row=document.createElement('div'); row.className='row';
+        const openBtn=document.createElement('button'); openBtn.className='btn-blue'; openBtn.textContent='Open';
+        openBtn.onclick=(e)=>{ e.stopPropagation(); openCollectionDetail(col); };
+        const delBtn=document.createElement('button'); delBtn.className='btn-orange'; delBtn.textContent='Delete';
+        delBtn.onclick=async(e)=>{
+          e.stopPropagation();
+          if(!confirm(`Delete collection "${col.name}"?\nBooks will remain in your library.`)) return;
+          // unassign all books in this collection
+          const toUpdate=books.filter(b=>b.collectionId===col.id);
+          await Promise.all(toUpdate.map(b=>{ b.collectionId=null; return idbAddBook(b); }));
+          await idbDeleteCol(col.id);
+          renderCollections();
+        };
+        row.append(openBtn, delBtn);
+        card.append(icon, name, cnt, row);
+        card.ondblclick=()=>openCollectionDetail(col);
+        collectionsGrid.appendChild(card);
+      }
+    }
+
+    async function openCollectionDetail(col){
+      collectionDetail.style.display='block';
+      collectionsGrid.style.display='none';
+      detailTitle.textContent=`📁 ${col.name}`;
+      detailGrid.innerHTML='';
+      const books=(await idbGetAll()).filter(b=>b.collectionId===col.id).sort((a,b)=>b.createdAt-a.createdAt);
+      if(!books.length){
+        detailGrid.innerHTML='<p style="color:var(--muted)">No books in this collection yet.</p>';
+        return;
+      }
+      for(const r of books){
+        const card=document.createElement('div'); card.className='card';
+        const covWrap=document.createElement('div'); covWrap.className='coverWrap';
+        const img=document.createElement('img'); img.className='cover';
+        if(r.coverBlob) img.src=URL.createObjectURL(r.coverBlob); else img.alt='No cover';
+        covWrap.appendChild(img);
+        const meta=document.createElement('div'); meta.className='meta';
+        const title=document.createElement('div'); title.className='title'; title.textContent=r.title||'Untitled'; title.title=r.title||'Untitled';
+        const author=document.createElement('div'); author.className='author'; author.textContent=r.author||''; author.title=r.author||'';
+        const row=document.createElement('div'); row.className='row';
+        const readBtn=document.createElement('button'); readBtn.className='btn-blue'; readBtn.textContent=r.lastCfi?'Continue':'Read';
+        readBtn.onclick=()=>openBookFromDB(r.id);
+        const removeBtn=document.createElement('button'); removeBtn.className='btn-orange'; removeBtn.textContent='Remove';
+        removeBtn.onclick=async()=>{
+          r.collectionId=null; await idbAddBook(r); openCollectionDetail(col);
+        };
+        row.append(readBtn, removeBtn);
+        meta.append(title, author, row);
+        card.append(covWrap, meta);
+        detailGrid.appendChild(card);
+      }
+    }
+
+    backToCollections.onclick=()=>{ collectionDetail.style.display='none'; collectionsGrid.style.display='grid'; renderCollections(); };
+
+    newCollectionBtn.onclick=async()=>{
+      const name=(prompt('Collection name:') || '').trim();
+      if(!name) return;
+      await idbAddCol({ id:crypto.randomUUID(), name, createdAt:Date.now() });
+      renderCollections();
+    };
+
+    /********** Collection picker on book cards **********/
+    let activePicker=null;
+    function closePicker(){ if(activePicker){ activePicker.remove(); activePicker=null; } }
+    document.addEventListener('click', ()=>closePicker());
+
+    async function showCollectionPicker(btn, book){
+      closePicker();
+      const cols=await idbGetAllCols();
+      const picker=document.createElement('div'); picker.className='col-picker';
+      picker.onclick=e=>e.stopPropagation();
+
+      // "None" option
+      const noneItem=document.createElement('div'); noneItem.className='col-picker-item'+(book.collectionId===null?' selected':'');
+      noneItem.innerHTML=`<span>🚫</span><span>None</span>`;
+      noneItem.onclick=async()=>{ book.collectionId=null; await idbAddBook(book); closePicker(); renderLibrary(); };
+      picker.appendChild(noneItem);
+
+      for(const col of cols.sort((a,b)=>a.name.localeCompare(b.name))){
+        const item=document.createElement('div'); item.className='col-picker-item'+(book.collectionId===col.id?' selected':'');
+        item.innerHTML=`<span>📁</span><span>${col.name}</span>`;
+        item.onclick=async()=>{ book.collectionId=col.id; await idbAddBook(book); closePicker(); renderLibrary(); };
+        picker.appendChild(item);
+      }
+
+      if(!cols.length){
+        const empty=document.createElement('div'); empty.className='col-picker-item';
+        empty.style.color='var(--muted)'; empty.textContent='No collections yet';
+        picker.appendChild(empty);
+      }
+
+      btn.parentElement.style.position='relative';
+      btn.parentElement.appendChild(picker);
+      activePicker=picker;
     }
 
     /********** Import **********/
@@ -460,6 +713,7 @@
       try{ await book?.destroy(); }catch{}
       book=null; rendition=null; locations=null;
       controls.style.display='none';
+      document.getElementById('sidebar').style.display='flex';
     }
 
     async function openBookFromDB(id){
@@ -474,6 +728,8 @@
       // Switch UI to Reader
       document.body.classList.remove('mode-library');
       libraryEl.style.display='none';
+      collectionsView.style.display='none';
+      document.getElementById('sidebar').style.display='none';
       viewerEl.style.display='block';
       controls.style.display='flex';
       toLibraryBtn.style.display='inline-block';

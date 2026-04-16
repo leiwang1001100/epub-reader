@@ -16,9 +16,9 @@
   <input id="importInput" type="file" accept=".epub" multiple />
 
   <!-- Sidebar -->
-  <nav id="sidebar">
-    <button class="sidebar-btn active" id="sideHome" title="All Books">🏠</button>
-    <button class="sidebar-btn" id="sideCollections" title="Collections">📁</button>
+  <nav id="sidebar" aria-label="Main navigation">
+    <button class="sidebar-btn active" id="sideHome" title="All Books" aria-label="All Books">🏠</button>
+    <button class="sidebar-btn" id="sideCollections" title="Collections" aria-label="Collections">📁</button>
   </nav>
 
   <header>
@@ -26,18 +26,18 @@
     <input id="searchBox" placeholder="Search text…" style="display:none;" />
     <span id="meta" class="small"></span>
     <span class="spacer"></span>
-    <span id="status" class="small-badge"></span>
+    <span id="status" class="small-badge" role="status" aria-live="polite"></span>
   </header>
 
   <!-- Library -->
   <div id="library">
     <div id="libToolbar">
       <button id="importBtn" class="btn-purple">Import EPUBs</button>
-      <input id="libSearch" type="search" placeholder="🔍 Search title / author…" />
-      <select id="libColFilter" class="filter-select">
+      <input id="libSearch" type="search" placeholder="🔍 Search title / author…" aria-label="Search books by title or author" />
+      <select id="libColFilter" class="filter-select" aria-label="Filter by collection">
         <option value="">📁 All Collections</option>
       </select>
-      <select id="libSort" class="filter-select">
+      <select id="libSort" class="filter-select" aria-label="Sort books">
         <option value="newest">Newest first</option>
         <option value="oldest">Oldest first</option>
         <option value="title-az">Title A–Z</option>
@@ -50,11 +50,11 @@
         <button class="page-size-btn" data-size="50">50</button>
         <button class="page-size-btn" data-size="100">100</button>
         <span class="page-divider"></span>
-        <button id="libPrevBtn" class="page-nav-btn">&#8249;</button>
-        <span id="libPageInfo" class="small">Page 1 of 1</span>
-        <button id="libNextBtn" class="page-nav-btn">&#8250;</button>
+        <button id="libPrevBtn" class="page-nav-btn" aria-label="Previous page">&#8249;</button>
+        <span id="libPageInfo" class="small" aria-live="polite">Page 1 of 1</span>
+        <button id="libNextBtn" class="page-nav-btn" aria-label="Next page">&#8250;</button>
       </div>
-      <span class="small-badge" title="App version">v1.3.2</span>
+      <span class="small-badge" title="App version">v1.3.3</span>
     </div>
     <p id="libHint" class="small" style="margin:0 0 8px 0;color:var(--muted);"></p>
     <hr class="toolbar-divider" />
@@ -73,9 +73,9 @@
         <button class="col-size-btn" data-size="50">50</button>
         <button class="col-size-btn" data-size="100">100</button>
         <span class="page-divider"></span>
-        <button id="colPrevBtn" class="page-nav-btn">&#8249;</button>
-        <span id="colPageInfo" class="small">Page 1 of 1</span>
-        <button id="colNextBtn" class="page-nav-btn">&#8250;</button>
+        <button id="colPrevBtn" class="page-nav-btn" aria-label="Previous page">&#8249;</button>
+        <span id="colPageInfo" class="small" aria-live="polite">Page 1 of 1</span>
+        <button id="colNextBtn" class="page-nav-btn" aria-label="Next page">&#8250;</button>
       </div>
     </div>
     <hr class="toolbar-divider" />
@@ -103,13 +103,13 @@
     </div>
   </div>
 
-  <div id="controls">
-    <button id="prev" class="btn-blue">⬅️ Prev</button>
-    <button id="next" class="btn-blue">Next ➡️</button>
-    <button id="tocToggle" class="btn-green">Hide TOC</button>
-    <button id="fontMinus" class="btn-orange">A−</button>
-    <button id="fontPlus" class="btn-orange">A+</button>
-    <button id="bgToggle" class="btn-purple">Background: Paper</button>
+  <div id="controls" role="toolbar" aria-label="Reader controls">
+    <button id="prev" class="btn-blue" aria-label="Previous page">⬅️ Prev</button>
+    <button id="next" class="btn-blue" aria-label="Next page">Next ➡️</button>
+    <button id="tocToggle" class="btn-green" aria-label="Toggle table of contents">Hide TOC</button>
+    <button id="fontMinus" class="btn-orange" aria-label="Decrease font size">A−</button>
+    <button id="fontPlus" class="btn-orange" aria-label="Increase font size">A+</button>
+    <button id="bgToggle" class="btn-purple" aria-label="Change background theme">Background: Paper</button>
     <!-- scroll toggle appended if missing -->
   </div>
 

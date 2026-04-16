@@ -39,8 +39,12 @@ async function renderCollections(){
     const latestBook=colBooks[0];
     if(latestBook?.coverBlob){
       const img=document.createElement('img');
-      img.src=URL.createObjectURL(latestBook.coverBlob);
+      img.alt=latestBook.title||'Book cover';
       img.style.cssText='width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:4px;';
+      const blobUrl=URL.createObjectURL(latestBook.coverBlob);
+      img.src=blobUrl;
+      img.onload=()=>URL.revokeObjectURL(blobUrl);
+      img.onerror=()=>URL.revokeObjectURL(blobUrl);
       icon.appendChild(img);
     } else {
       icon.textContent='📁';
@@ -80,8 +84,13 @@ async function openCollectionDetail(col){
   for(const r of books){
     const card=document.createElement('div'); card.className='card';
     const covWrap=document.createElement('div'); covWrap.className='coverWrap';
-    const img=document.createElement('img'); img.className='cover';
-    if(r.coverBlob) img.src=URL.createObjectURL(r.coverBlob); else img.alt='No cover';
+    const img=document.createElement('img'); img.className='cover'; img.alt=r.title||'Book cover';
+    if(r.coverBlob){
+      const blobUrl=URL.createObjectURL(r.coverBlob);
+      img.src=blobUrl;
+      img.onload=()=>URL.revokeObjectURL(blobUrl);
+      img.onerror=()=>URL.revokeObjectURL(blobUrl);
+    }
     covWrap.appendChild(img);
     const meta=document.createElement('div'); meta.className='meta';
     const title=document.createElement('div'); title.className='title'; title.textContent=r.title||'Untitled'; title.title=r.title||'Untitled';

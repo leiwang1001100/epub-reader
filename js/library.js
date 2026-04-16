@@ -72,8 +72,13 @@ async function renderLibrary(){
   for(const r of books){
     const card=document.createElement('div'); card.className='card';
     const covWrap=document.createElement('div'); covWrap.className='coverWrap';
-    const img=document.createElement('img'); img.className='cover';
-    if(r.coverBlob) img.src=URL.createObjectURL(r.coverBlob); else img.alt='No cover';
+    const img=document.createElement('img'); img.className='cover'; img.alt=r.title||'Book cover';
+    if(r.coverBlob){
+      const blobUrl=URL.createObjectURL(r.coverBlob);
+      img.src=blobUrl;
+      img.onload=()=>URL.revokeObjectURL(blobUrl);
+      img.onerror=()=>URL.revokeObjectURL(blobUrl);
+    }
     covWrap.appendChild(img);
 
     const meta=document.createElement('div'); meta.className='meta';

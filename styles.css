@@ -144,7 +144,6 @@
       min-width: unset; width: 36px; height: 36px; padding: 0;
       font-size: 16px; border-radius: 8px;
       display: grid; place-items: center; flex: 0 0 auto;
-      --btn1:#9ca3af; --btn2:#6b7280;
     }
     .btn-more {
       position: absolute; top: 8px; right: 8px;

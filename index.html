@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>EPUB Reader + Library</title>
+
+  <style>
+    :root { --border:#e5e7eb; --muted:#6b7280; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto; color:#111; }
+
+    header {
+      padding: 0.75rem 1rem;
+      display:flex; gap:0.75rem; align-items:center;
+      border-bottom:1px solid var(--border);
+      background:#ffffffaa; backdrop-filter: saturate(1.1) blur(4px);
+    }
+
+    #viewer { position: fixed; inset: 56px 0 64px 0; display:none; }
+    #controls {
+      position: fixed; bottom: 0; left: 0; right: 0; padding: 0.75rem;
+      display:flex; gap:0.6rem; justify-content:center; flex-wrap: wrap;
+      border-top:1px solid var(--border);
+      background:#ffffffcc; backdrop-filter: saturate(1.1) blur(6px);
+      z-index: 20; display:none;
+    }
+
+    /* Keep file input present (so click is allowed) but off-screen */
+    #importInput {
+      position: fixed; left: -10000px; top: 0;
+      width: 1px; height: 1px; opacity: 0; pointer-events: none;
+    }
+
+    /* Fancy button base */
+    button {
+      --btn1:#4f46e5; --btn2:#9333ea;
+      padding: 0.6rem 1.1rem;
+      border: none; border-radius: 9999px;
+      background: linear-gradient(135deg, var(--btn1), var(--btn2));
+      color: #fff; font-weight: 600; letter-spacing: .2px;
+      cursor: pointer; min-width: 110px;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.2s ease;
+      outline: none;
+    }
+    button:hover { transform: translateY(-2px); box-shadow: 0 10px 18px rgba(0,0,0,0.22); filter: brightness(1.02); }
+    button:active { transform: translateY(0);   box-shadow: 0 5px 10px rgba(0,0,0,0.18);  filter: brightness(.98); }
+    button:disabled { opacity:.55; cursor:not-allowed; filter: grayscale(.25); }
+
+    /* Color themes */
+    .btn-blue   { --btn1:#2563eb; --btn2:#1d4ed8; }
+    .btn-green  { --btn1:#16a34a; --btn2:#15803d; }
+    .btn-orange { --btn1:#f97316; --btn2:#ea580c; }
+    .btn-purple { --btn1:#7c3aed; --btn2:#6d28d9; }
+    .btn-teal   { --btn1:#14b8a6; --btn2:#0d9488; }
+
+    .spacer { flex:1; }
+    .small-badge {
+      display:inline-block; padding:.2rem .5rem; border-radius:999px;
+      background:#eef2ff; color:#3730a3; font-weight:600; font-size:12px;
+    }
+
+    /* Library screen */
+    #library {
+      position: fixed; inset: 56px 0 0 0;
+      padding: 16px; overflow:auto;
+      background: radial-gradient(1200px 600px at 50% -200px, #eef2ff, #fff);
+    }
+    #libToolbar { display:flex; gap:8px; align-items:center; margin-bottom: 12px; }
+    #grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
+    .card { border:1px solid var(--border); border-radius:14px; background:#fff; overflow:hidden; display:flex; flex-direction:column; box-shadow: 0 4px 10px rgba(0,0,0,.05); }
+    .coverWrap { background: linear-gradient(180deg,#f8fafc,#eef2ff); display:grid; place-items:center; aspect-ratio: 2/3; }
+    .cover { max-width: 100%; max-height: 100%; object-fit: contain; display:block; }
+    .meta { padding: 10px; display:flex; flex-direction:column; gap:6px; }
+    .title { font-weight: 700; line-height:1.2; }
+    .author, .small { color: var(--muted); font-size: 12px; }
+    .row { display:flex; gap:8px; }
+    .row > button { flex:1; min-width: unset; }
+
+    /* Reader split view */
+    #split { display:flex; height:100%; position: relative; }
+    #toc {
+      flex: 0 0 300px; width: 300px; max-width: none; overflow: auto;
+      z-index: 10; background: #fff; border-right: 1px solid var(--border); padding: 0.5rem 0.75rem;
+    }
+    #toc.hidden { display:none; border-right:none; }
+    #toc ul { margin: 0; padding-left: 1rem; }
+    #toc li { margin: 0.15rem 0; }
+    #toc a { color: inherit; text-decoration: none; }
+    #toc a:hover { text-decoration: underline; }
+
+    #rendition { flex: 1; min-width: 0; position: relative; z-index: 1; }
+    #rendition .epub-container { position: relative !important; height: 100% !important; }
+    #rendition .epub-view, #rendition iframe { display:block !important; }
+
+    #searchBox { flex: 1; max-width: 420px; }
+
+    /* Safe header-hide in Library mode */
+    body.mode-library header { display: none; }
+    body.mode-library #library { inset: 0 0 0 0; }
+    body:not(.mode-library) #library { inset: 56px 0 0 0; }
+  </style>
+
+  <!-- Needed for file:// -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/epubjs@0.3/dist/epub.min.js"></script>
+</head>
+<body class="mode-library">
+  <!-- File input off-screen but enabled -->
+  <input id="importInput" type="file" accept=".epub" multiple />
+
+  <header>
+    <button id="toLibrary" class="btn-green" style="display:none;">← Library</button>
+    <input id="searchBox" placeholder="Search text…" style="display:none;" />
+    <span id="meta" class="small"></span>
+    <span class="spacer"></span>
+    <span id="status" class="small-badge"></span>
+  </header>
+
+  <!-- Library -->
+  <div id="library">
+    <div id="libToolbar">
+      <button id="importBtn" class="btn-purple">Import EPUBs</button>
+      <span class="small" id="libHint">Imported books are saved locally and appear here next time.</span>
+    </div>
+    <div id="grid"></div>
+  </div>
+
+  <!-- Reader -->
+  <div id="viewer">
+    <div id="split">
+      <nav id="toc"></nav>
+      <div id="rendition"></div>
+    </div>
+  </div>
+
+  <div id="controls">
+    <button id="prev" class="btn-blue">⬅️ Prev</button>
+    <button id="next" class="btn-blue">Next ➡️</button>
+    <button id="tocToggle" class="btn-green">Hide TOC</button>
+    <button id="fontMinus" class="btn-orange">A−</button>
+    <button id="fontPlus" class="btn-orange">A+</button>
+    <button id="bgToggle" class="btn-purple">Background: Paper</button>
+    <!-- scroll toggle appended if missing -->
+  </div>
+
+  <script>
+    /********** IndexedDB **********/
+    const DB_NAME='epubLibrary', DB_VERSION=1, STORE='books'; let db;
+    function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,DB_VERSION);req.onupgradeneeded=()=>{const d=req.result;if(!d.objectStoreNames.contains(STORE)){d.createObjectStore(STORE,{keyPath:'id'}).createIndex?.('createdAt','createdAt');}};req.onsuccess=()=>{db=req.result;resolve(db)};req.onerror=()=>reject(req.error);});}
+    function idbAddBook(record){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);tx.objectStore(STORE).put(record);});}
+    function idbGetAll(){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readonly');const rq=tx.objectStore(STORE).getAll();rq.onsuccess=()=>res(rq.result||[]);rq.onerror=()=>rej(rq.error);});}
+    function idbGet(id){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readonly');const rq=tx.objectStore(STORE).get(id);rq.onsuccess=()=>res(rq.result||null);rq.onerror=()=>rej(rq.error);});}
+    function idbDelete(id){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).delete(id);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);});}
+
+    /********** Elements **********/
+    const toLibraryBtn=document.getElementById('toLibrary');
+    const importInput=document.getElementById('importInput');
+    const importBtn=document.getElementById('importBtn');
+    const libraryEl=document.getElementById('library');
+    const gridEl=document.getElementById('grid');
+    const libHint=document.getElementById('libHint');
+
+    const viewerEl=document.getElementById('viewer');
+    const tocEl=document.getElementById('toc');
+    const metaEl=document.getElementById('meta');
+    const searchBox=document.getElementById('searchBox');
+    const prevBtn=document.getElementById('prev');
+    const nextBtn=document.getElementById('next');
+    const tocToggle=document.getElementById('tocToggle');
+    const fontMinus=document.getElementById('fontMinus');
+    const fontPlus=document.getElementById('fontPlus');
+    const bgToggle=document.getElementById('bgToggle');
+    const controls=document.getElementById('controls');
+    const statusEl=document.getElementById('status');
+
+    /********** State **********/
+    let book, rendition, locations;
+    let currentBookId=null;
+    let fontSize=100;
+    let tocVisible=true;
+
+    const bgModes=['paper','sepia','dark']; let bgIdx=0;
+    const BG_COLORS={paper:{bg:'#fdfaf3',fg:'#2b2b2b'},sepia:{bg:'#f4ecd8',fg:'#3b2f1a'},dark:{bg:'#111',fg:'#eee'}};
+
+    /********** Utilities **********/
+    function humanSize(bytes){const u=['B','KB','MB','GB'];let i=0,n=bytes;while(n>=1024&&i<u.length-1){n/=1024;i++;}return`${n.toFixed(n<10&&i>0?1:0)} ${u[i]}`;}
+    function flashStatus(msg){statusEl.textContent=msg;setTimeout(()=>statusEl.textContent='',1400);}
+    function normalizePath(path){path=path.split('#')[0].split('?')[0];const parts=path.split('/');const out=[];for(const p of parts){if(!p||p==='.')continue;if(p==='..')out.pop();else out.push(p);}return out.join('/');}
+    function resolveRelative(src,baseHref){const baseDir=baseHref.includes('/')?baseHref.slice(0,baseHref.lastIndexOf('/')+1):'';return normalizePath(baseDir+src);}
+
+    /********** Background **********/
+    function setBackgroundForContents(contents,mode){
+      const {bg,fg}=BG_COLORS[mode]||BG_COLORS.paper; const doc=contents.document; if(!doc)return;
+      let style=doc.getElementById('bg-style');
+      if(!style){style=doc.createElement('style');style.id='bg-style';doc.head.appendChild(style);}
+      style.textContent=`html,body{background:${bg}!important;color:${fg}!important;}img,svg{max-width:100%;height:auto;}body{line-height:1.6;word-wrap:break-word;max-width:42rem;margin:auto;padding:2rem;}`;
+    }
+    function applyBackground(mode){
+      if(!rendition)return;
+      rendition.getContents().forEach(c=>setBackgroundForContents(c,mode));
+      bgToggle.textContent=`Background: ${mode[0].toUpperCase()}${mode.slice(1)}`;
+    }
+
+    /********** Library **********/
+    async function renderLibrary(){
+      document.body.classList.add('mode-library');
+      libraryEl.style.display='block';
+      viewerEl.style.display='none';
+      controls.style.display='none';
+      toLibraryBtn.style.display='none';
+      searchBox.style.display='none';
+      importBtn.style.display='inline-block';
+      metaEl.textContent=''; statusEl.textContent='';
+
+      const rows=(await idbGetAll()).sort((a,b)=>b.createdAt-a.createdAt);
+      gridEl.innerHTML='';
+      libHint.textContent = rows.length ? 'Books are saved locally in your browser.' : 'Tip: Click "Import EPUBs" to add books to your library.';
+
+      for(const r of rows){
+        const card=document.createElement('div'); card.className='card';
+        const covWrap=document.createElement('div'); covWrap.className='coverWrap';
+        const img=document.createElement('img'); img.className='cover';
+        if(r.coverBlob) img.src=URL.createObjectURL(r.coverBlob); else img.alt='No cover';
+        covWrap.appendChild(img);
+
+        const meta=document.createElement('div'); meta.className='meta';
+        const title=document.createElement('div'); title.className='title'; title.textContent=r.title||'Untitled';
+        const author=document.createElement('div'); author.className='author'; author.textContent=r.author||'';
+        const small=document.createElement('div'); small.className='small';
+        small.textContent=`${humanSize(r.size||0)} · Added ${new Date(r.createdAt).toLocaleDateString()}`;
+
+        const row=document.createElement('div'); row.className='row';
+        const openBtn=document.createElement('button'); openBtn.className='btn-blue'; openBtn.textContent=r.lastCfi?'Continue':'Read';
+        openBtn.onclick=()=>openBookFromDB(r.id);
+        const delBtn=document.createElement('button'); delBtn.className='btn-orange'; delBtn.textContent='Delete';
+        delBtn.onclick=async()=>{await idbDelete(r.id); renderLibrary();};
+        row.append(openBtn,delBtn);
+
+        meta.append(title,author,small,row);
+        card.append(covWrap,meta);
+        gridEl.appendChild(card);
+      }
+    }
+
+    /********** Import **********/
+    importBtn.onclick=()=>importInput.click();
+    importInput.addEventListener('change', async ()=>{
+      const files=Array.from(importInput.files||[]); if(!files.length)return;
+      await openDB(); statusEl.textContent='Importing…';
+      for(const f of files){
+        const buf=await f.arrayBuffer();
+        const rec=await extractBookRecord(buf,f.name,f.size);
+        await idbAddBook(rec);
+      }
+      statusEl.textContent='';
+      await renderLibrary();
+      importInput.value='';
+    });
+
+    async function extractBookRecord(buf,filename,size){
+      const b=ePub(buf,{openAs:'binary'}); await b.ready;
+      const md=await b.loaded.metadata.catch(()=>({}));
+      const title=md?.title || filename.replace(/\.epub$/i,'');
+      const author=md?.creator || '';
+      // Cover extraction
+      let coverBlob=null;
+      try{
+        if(b.coverUrl){
+          const url=await b.coverUrl();
+          if(url?.startsWith('blob:')){ const res=await fetch(url); coverBlob=await res.blob(); }
+          else if(url){ const file=b.archive?.zip?.file(url)||b.archive?.zip?.file(decodeURI(url)); if(file) coverBlob=await file.async('blob'); }
+        }
+        if(!coverBlob){
+          const si=b.spine.spineItems[0];
+          if(si){
+            await si.load(b.load.bind(b));
+            const doc=si.document; const img=doc&&doc.querySelector('img');
+            if(img){
+              const href=resolveRelative(img.getAttribute('src'),si.href);
+              const file=b.archive?.zip?.file(href)||b.archive?.zip?.file(decodeURI(href));
+              if(file) coverBlob=await file.async('blob');
+            }
+            await si.unload();
+          }
+        }
+      }catch{}
+      return { id:crypto.randomUUID(), title, author, size, createdAt:Date.now(), filename, bufBlob:new Blob([buf]), coverBlob, lastCfi:null };
+    }
+
+    /********** Reader **********/
+    function clearTOC(){ tocEl.innerHTML=''; }
+    function buildTOC(toc){
+      clearTOC();
+      const ul=document.createElement('ul');
+      (toc||[]).forEach(item=>{
+        const li=document.createElement('li');
+        const a=document.createElement('a');
+        a.textContent=(item.label||'').trim()||'(untitled)';
+        a.href='#';
+        a.onclick=(e)=>{ e.preventDefault(); rendition.display(item.href); };
+        li.appendChild(a);
+        if(item.subitems?.length){
+          const sub=document.createElement('ul');
+          item.subitems.forEach(s=>{
+            const sli=document.createElement('li');
+            const sa=document.createElement('a');
+            sa.textContent=(s.label||'').trim()||'(untitled)';
+            sa.href='#';
+            sa.onclick=(e)=>{ e.preventDefault(); rendition.display(s.href); };
+            sli.appendChild(sa); sub.appendChild(sli);
+          });
+          li.appendChild(sub);
+        }
+        ul.appendChild(li);
+      });
+      tocEl.appendChild(ul);
+    }
+
+    function wirePaging(){
+      prevBtn.onclick=()=>rendition.prev();
+      nextBtn.onclick=()=>rendition.next();
+
+      document.addEventListener('keydown',(e)=>{
+        if(viewerEl.style.display!=='block') return;
+
+        let handled = false;
+        switch(e.key){
+          case 'ArrowLeft':
+          case 'PageUp':
+            rendition.prev(); handled = true; break;
+
+          case 'ArrowRight':
+          case 'PageDown':
+          case ' ':
+            rendition.next(); handled = true; break;
+
+          case 't':
+          case 'T':
+            tocVisible=!tocVisible; updateTocVisibility(); handled = true; break;
+
+          case 'b':
+          case 'B':
+            bgIdx=(bgIdx+1)%bgModes.length;
+            applyBackground(bgModes[bgIdx]);
+            applyFontSize();
+            handled = true;
+            break;
+
+          case '+':              // plus on some layouts
+            fontSize=Math.min(fontSize+10,200); applyFontSize(); handled = true; break;
+          case '=':              // Shift+= also gives '+'
+            if (e.shiftKey) { fontSize=Math.min(fontSize+10,200); applyFontSize(); handled = true; }
+            break;
+          case '-':
+          case '_':
+            fontSize=Math.max(fontSize-10,50); applyFontSize(); handled = true; break;
+        }
+
+        if (handled) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      });
+    }
+
+    function applyFontSize(){
+      try { rendition.themes.fontSize(fontSize+'%'); } catch {}
+      try {
+        rendition.getContents().forEach(c=>{
+          c.addStylesheetRules({
+            'html, body, p, div, span': {
+              'font-size': fontSize+'% !important',
+              'line-height': '1.6'
+            }
+          });
+        });
+      } catch {}
+    }
+    fontPlus.onclick=()=>{ fontSize=Math.min(fontSize+10,200); applyFontSize(); };
+    fontMinus.onclick=()=>{ fontSize=Math.max(fontSize-10,50);  applyFontSize(); };
+
+    // Background cycle button
+    bgToggle.onclick=()=>{
+      if(!rendition) return;
+      bgIdx=(bgIdx+1)%bgModes.length;
+      applyBackground(bgModes[bgIdx]);
+      applyFontSize();
+    };
+
+    // TOC toggle (click)
+    function updateTocVisibility(){
+      if(!rendition) return;
+      if(tocVisible){ tocEl.classList.remove('hidden'); tocToggle.textContent='Hide TOC'; }
+      else { tocEl.classList.add('hidden'); tocToggle.textContent='Show TOC'; }
+      requestAnimationFrame(()=>rendition.resize());
+    }
+    tocToggle.onclick=()=>{ tocVisible=!tocVisible; updateTocVisibility(); };
+
+    toLibraryBtn.onclick=async()=>{ await unloadBook(); renderLibrary(); };
+
+    async function unloadBook(){
+      try{ await rendition?.destroy(); }catch{}
+      try{ await book?.destroy(); }catch{}
+      book=null; rendition=null; locations=null;
+      controls.style.display='none';
+    }
+
+    async function openBookFromDB(id){
+      await openDB();
+      const rec=await idbGet(id);
+      if(!rec) return alert('Book not found.');
+      currentBookId=id;
+
+      // Unload before showing controls (prevents buttons from disappearing)
+      await unloadBook();
+
+      // Switch UI to Reader
+      document.body.classList.remove('mode-library');
+      libraryEl.style.display='none';
+      viewerEl.style.display='block';
+      controls.style.display='flex';
+      toLibraryBtn.style.display='inline-block';
+      searchBox.style.display='inline-block';
+      importBtn.style.display='none';
+
+      // Load the book
+      const buf=await rec.bufBlob.arrayBuffer();
+      book=ePub(buf,{openAs:'binary'}); await book.ready;
+
+      rendition=book.renderTo('rendition',{ width:'100%', height:'100%', manager:'continuous', flow:'paginated', spread:'none' });
+      await rendition.display(rec.lastCfi || undefined);
+
+      rendition.themes.register('reader-base',{
+        'html, body': { margin:0, padding:0 },
+        'img, svg': { maxWidth:'100%', height:'auto' }
+      });
+      rendition.themes.select('reader-base');
+
+      // Background on new sections
+      rendition.hooks.content.register((contents)=>{ setBackgroundForContents(contents, bgModes[bgIdx]||'paper'); });
+
+      // Defaults
+      bgIdx=0; applyBackground('paper'); applyFontSize();
+
+      tocVisible=true; updateTocVisibility();
+      wirePaging();
+      addOrEnsureScrollToggle();
+
+      // Metadata
+      const md=await book.loaded.metadata.catch(()=>({}));
+      metaEl.textContent=`${md?.title || rec.title || 'Untitled'} — ${md?.creator || rec.author || ''}`.trim();
+
+      // TOC
+      const nav=await book.loaded.navigation.catch(()=>({toc:[]}));
+      buildTOC(nav.toc||[]);
+
+      // Progress + persist CFI
+      try{ locations=await book.locations.generate(1000); }catch{}
+      rendition.on('relocated', async (loc)=>{
+        try{
+          const pct=book.locations?.percentageFromCfi?.(loc.start.cfi) || 0;
+          document.title=`${Math.round(pct*100)}% · ${md?.title || rec.title || 'EPUB Reader'}`;
+          const r=await idbGet(currentBookId);
+          if(r){ r.lastCfi=loc.start.cfi; await idbAddBook(r); }
+        }catch{}
+      });
+
+      window.addEventListener('resize', ()=>rendition.resize());
+
+      // Search
+      searchBox.onchange=async()=>{
+        const q=searchBox.value.trim(); if(!q) return;
+        try{
+          const results=await Promise.all(
+            book.spine.spineItems.map(i=>i.load(book.load.bind(book)).then(()=>i.find(q)).finally(()=>i.unload()))
+          );
+          const flat=results.flat();
+          if(flat.length) await rendition.display(flat[0].cfi);
+          else alert('No matches found.');
+        }catch(e){ console.error(e); }
+      };
+
+      flashStatus('Opened from Library');
+    }
+
+    function addOrEnsureScrollToggle(){
+      let btn=document.getElementById('scrollToggle');
+      if(!btn){
+        btn=document.createElement('button');
+        btn.id='scrollToggle';
+        btn.textContent='Scroll mode';
+        btn.className='btn-teal';
+        controls.appendChild(btn);
+      }
+      let isScrolled=false;
+      btn.onclick=async()=>{
+        isScrolled=!isScrolled;
+        btn.textContent=isScrolled?'Paginated mode':'Scroll mode';
+        const loc=rendition.currentLocation()?.start?.cfi;
+        await rendition.flow(isScrolled?'scrolled-doc':'paginated');
+        await rendition.display(loc);
+        applyFontSize();
+        applyBackground(bgModes[bgIdx]||'paper');
+        updateTocVisibility();
+      };
+    }
+
+    /********** Boot **********/
+    window.addEventListener('error', e=>console.error('Error:', e.message));
+    window.addEventListener('unhandledrejection', e=>console.error('Promise rejection:', e.reason));
+
+    (async function init(){
+      await openDB();
+      await renderLibrary();
+    })();
+  </script>
+</body>
+</html>

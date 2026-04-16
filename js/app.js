@@ -1,3 +1,4 @@
+'use strict';
 /********** Elements **********/
 const toLibraryBtn=document.getElementById('toLibrary');
 const importInput=document.getElementById('importInput');
@@ -95,9 +96,10 @@ window.addEventListener('unhandledrejection', e=>console.error('Promise rejectio
     await renderLibrary();
   }catch(err){
     console.error('Init failed:', err);
+    const msg=escapeHtml(String(err?.message||err));
     document.body.innerHTML=`<div style="padding:2rem;font-family:system-ui;color:#b91c1c;">
       <h2>⚠️ Failed to initialise app</h2>
-      <p>${err?.message||err}</p>
+      <p>${msg}</p>
       <p>Try opening the browser console for more details.</p>
     </div>`;
   }

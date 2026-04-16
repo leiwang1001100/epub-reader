@@ -1,3 +1,4 @@
+'use strict';
 /********** Library **********/
 async function renderLibrary(){
   document.body.classList.add('mode-library');
@@ -13,11 +14,11 @@ async function renderLibrary(){
   setSidebarActive('home');
   metaEl.textContent=''; statusEl.textContent='';
 
-  // Populate collection filter dropdown
+  // Populate collection filter dropdown + fetch all books in parallel
   const libColFilter=document.getElementById('libColFilter');
   const libSearch=document.getElementById('libSearch');
   const libSort=document.getElementById('libSort');
-  const allCols=await idbGetAllCols();
+  const [allCols, allBooks]=await Promise.all([idbGetAllCols(), idbGetAll()]);
   const prevColVal=libColFilter.value;
   libColFilter.innerHTML='<option value="">📁 All Collections</option>';
   libColFilter.innerHTML+='<option value="__none__">🚫 Uncategorised</option>';
@@ -26,29 +27,29 @@ async function renderLibrary(){
   });
   libColFilter.value=prevColVal||'';
 
-  // Get all books and apply search/sort/filter
-  let allBooks=await idbGetAll();
+  // Apply search/sort/filter
+  let filteredBooks=[...allBooks];
 
   // Filter by collection
   const colFilter=libColFilter.value;
-  if(colFilter==='__none__') allBooks=allBooks.filter(b=>!b.collectionId);
-  else if(colFilter) allBooks=allBooks.filter(b=>b.collectionId===colFilter);
+  if(colFilter==='__none__') filteredBooks=filteredBooks.filter(b=>!b.collectionId);
+  else if(colFilter) filteredBooks=filteredBooks.filter(b=>b.collectionId===colFilter);
 
   // Filter by search
   const q=(libSearch.value||'').trim().toLowerCase();
-  if(q) allBooks=allBooks.filter(b=>(b.title||'').toLowerCase().includes(q)||(b.author||'').toLowerCase().includes(q));
+  if(q) filteredBooks=filteredBooks.filter(b=>(b.title||'').toLowerCase().includes(q)||(b.author||'').toLowerCase().includes(q));
 
   // Sort
   const sort=libSort.value||'newest';
-  if(sort==='newest') allBooks.sort((a,b)=>b.createdAt-a.createdAt);
-  else if(sort==='oldest') allBooks.sort((a,b)=>a.createdAt-b.createdAt);
-  else if(sort==='title-az') allBooks.sort((a,b)=>(a.title||'').localeCompare(b.title||''));
-  else if(sort==='title-za') allBooks.sort((a,b)=>(b.title||'').localeCompare(a.title||''));
+  if(sort==='newest') filteredBooks.sort((a,b)=>b.createdAt-a.createdAt);
+  else if(sort==='oldest') filteredBooks.sort((a,b)=>a.createdAt-b.createdAt);
+  else if(sort==='title-az') filteredBooks.sort((a,b)=>(a.title||'').localeCompare(b.title||''));
+  else if(sort==='title-za') filteredBooks.sort((a,b)=>(b.title||'').localeCompare(a.title||''));
 
-  const totalPages=Math.max(1,Math.ceil(allBooks.length/libPageSize));
+  const totalPages=Math.max(1,Math.ceil(filteredBooks.length/libPageSize));
   libPage=Math.min(libPage,totalPages);
   const start=(libPage-1)*libPageSize;
-  const books=allBooks.slice(start, start+libPageSize);
+  const books=filteredBooks.slice(start, start+libPageSize);
 
   // Update pagination UI
   const libPageInfo=document.getElementById('libPageInfo');
@@ -64,10 +65,10 @@ async function renderLibrary(){
   });
 
   gridEl.innerHTML='';
-  const total=allBooks.length;
+  const total=filteredBooks.length;
   libHint.textContent = total
     ? `Showing ${Math.min(start+1, total)}–${Math.min(start+libPageSize, total)} of ${total} book${total!==1?'s':''}`
-    : (q ? 'No books match your search.' : 'Tip: Click "Import EPUBs" to add books to your library.');
+    : (q||colFilter ? 'No books match your search.' : 'Tip: Click "Import EPUBs" to add books to your library.');
 
   for(const r of books){
     const card=document.createElement('div'); card.className='card';
@@ -141,14 +142,22 @@ async function extractBookRecord(buf,filename,size){
     if(!coverBlob){
       const si=b.spine.spineItems[0];
       if(si){
-        await si.load(b.load.bind(b));
-        const doc=si.document; const img=doc&&doc.querySelector('img');
-        if(img){
-          const href=resolveRelative(img.getAttribute('src'),si.href);
-          const file=b.archive?.zip?.file(href)||b.archive?.zip?.file(decodeURI(href));
-          if(file) coverBlob=await file.async('blob');
-        }
-        si.unload();
+        try{
+          await si.load(b.load.bind(b));
+          const doc=si.document;
+          const img=doc&&doc.querySelector('img[src]');
+          if(img){
+            const src=img.getAttribute('src');
+            if(src && !src.startsWith('data:')){
+              const href=resolveRelative(src, si.href);
+              if(href){
+                const file=b.archive?.zip?.file(href)||b.archive?.zip?.file(decodeURI(href));
+                if(file) coverBlob=await file.async('blob');
+              }
+            }
+          }
+          si.unload();
+        }catch(e){ console.warn('Cover fallback failed:',e); try{ si.unload(); }catch{} }
       }
     }
   }catch(e){ console.warn('Cover extraction failed:',e); }

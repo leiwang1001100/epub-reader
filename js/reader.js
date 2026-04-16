@@ -1,3 +1,4 @@
+'use strict';
 /********** Reader **********/
 let book, rendition, locations;
 let currentBookId=null;

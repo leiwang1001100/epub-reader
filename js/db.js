@@ -1,3 +1,4 @@
+'use strict';
 /********** IndexedDB **********/
 const DB_NAME='epubLibrary', DB_VERSION=2, STORE='books', COL_STORE='collections';
 let db;

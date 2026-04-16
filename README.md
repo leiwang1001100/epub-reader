@@ -3,7 +3,7 @@
 > A lightweight, offline EPUB reader that runs entirely in your browser.  
 > No server required — works directly with `file://`.
 
-![Version](https://img.shields.io/badge/version-v1.3.3-blue)
+![Version](https://img.shields.io/badge/version-v1.4.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
@@ -100,6 +100,7 @@ epub_app/
 - Graphic novels in fixed-layout EPUB format may not render correctly (PDF format recommended for comics).
 - To reset all data, clear site data in your browser DevTools → Application → IndexedDB.
 - Best tested in modern browsers: **Chrome**, **Edge**, **Firefox**.
+- Designed for **desktop/laptop use only** — mobile browsers are not supported.
 
 ### ⚠️ Known Limitations
 
@@ -110,6 +111,7 @@ epub_app/
 | **Fixed-layout EPUBs** | Graphic novels and comics in fixed-layout EPUB format are not supported. Use PDF format instead. |
 | **File protocol** | The app runs from `file://` and does not use ES modules. All JS files are loaded via `<script>` tags in order. |
 | **No sync** | Books and collections are stored locally in your browser only — no cloud sync or cross-device support. |
+| **Delete from collection** | Books cannot be permanently deleted from within a collection view. To delete a book, return to **Home** (🏠) and use the ✖ button on the book card. The `···` menu inside a collection only removes the book from that collection — it does not delete it from your library. |
 
 ---
 

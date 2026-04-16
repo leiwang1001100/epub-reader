@@ -1,3 +1,4 @@
+'use strict';
 /********** Collections **********/
 async function renderCollections(){
   collectionsView.style.display='block';

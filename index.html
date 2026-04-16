@@ -35,7 +35,17 @@
       <button id="importBtn" class="btn-purple">Import EPUBs</button>
       <span class="small" id="libHint">Imported books are saved locally and appear here next time.</span>
       <span class="spacer"></span>
-      <span class="small-badge" title="App version">v1.1.9</span>
+      <div class="page-controls">
+        <span class="small">Show:</span>
+        <button class="page-size-btn active" data-size="20">20</button>
+        <button class="page-size-btn" data-size="50">50</button>
+        <button class="page-size-btn" data-size="100">100</button>
+        <span class="page-divider"></span>
+        <button id="libPrevBtn" class="page-nav-btn">&#8249;</button>
+        <span id="libPageInfo" class="small">Page 1 of 1</span>
+        <button id="libNextBtn" class="page-nav-btn">&#8250;</button>
+      </div>
+      <span class="small-badge" title="App version">v1.2.0</span>
     </div>
     <div id="grid"></div>
   </div>
@@ -46,6 +56,16 @@
       <button id="newCollectionBtn" class="btn-green">＋ New Collection</button>
       <span class="small" id="collectionsHint">Organise your books into collections.</span>
       <span class="spacer"></span>
+      <div class="page-controls">
+        <span class="small">Show:</span>
+        <button class="col-size-btn active" data-size="20">20</button>
+        <button class="col-size-btn" data-size="50">50</button>
+        <button class="col-size-btn" data-size="100">100</button>
+        <span class="page-divider"></span>
+        <button id="colPrevBtn" class="page-nav-btn">&#8249;</button>
+        <span id="colPageInfo" class="small">Page 1 of 1</span>
+        <button id="colNextBtn" class="page-nav-btn">&#8250;</button>
+      </div>
     </div>
     <div id="collectionsGrid"></div>
     <!-- Collection detail (books inside a collection) -->
@@ -150,6 +170,12 @@
     let _keyHandler=null;   // stored so we can remove it before re-adding
     let _resizeHandler=null; // stored so we can remove it before re-adding
 
+    // Pagination state — persisted in localStorage
+    let libPageSize=parseInt(localStorage.getItem('epub_libPageSize')||'20',10);
+    let libPage=1;
+    let colPageSize=parseInt(localStorage.getItem('epub_colPageSize')||'20',10);
+    let colPage=1;
+
     const bgModes=['paper','sepia','dark'];
     const BG_COLORS={paper:{bg:'#fdfaf3',fg:'#2b2b2b'},sepia:{bg:'#f4ecd8',fg:'#3b2f1a'},dark:{bg:'#111',fg:'#eee'}};
 
@@ -194,11 +220,29 @@
       setSidebarActive('home');
       metaEl.textContent=''; statusEl.textContent='';
 
-      const rows=(await idbGetAll()).sort((a,b)=>b.createdAt-a.createdAt);
-      gridEl.innerHTML='';
-      libHint.textContent = rows.length ? 'Books are saved locally in your browser.' : 'Tip: Click "Import EPUBs" to add books to your library.';
+      const allBooks=(await idbGetAll()).sort((a,b)=>b.createdAt-a.createdAt);
+      const totalPages=Math.max(1,Math.ceil(allBooks.length/libPageSize));
+      libPage=Math.min(libPage,totalPages);
+      const start=(libPage-1)*libPageSize;
+      const books=allBooks.slice(start, start+libPageSize);
 
-      for(const r of rows){
+      // Update pagination UI
+      const libPageInfo=document.getElementById('libPageInfo');
+      const libPrevBtn=document.getElementById('libPrevBtn');
+      const libNextBtn=document.getElementById('libNextBtn');
+      libPageInfo.textContent=`Page ${libPage} of ${totalPages}`;
+      libPrevBtn.disabled=libPage<=1;
+      libNextBtn.disabled=libPage>=totalPages;
+
+      // Sync active page size button
+      document.querySelectorAll('.page-size-btn').forEach(btn=>{
+        btn.classList.toggle('active', parseInt(btn.dataset.size)===libPageSize);
+      });
+
+      gridEl.innerHTML='';
+      libHint.textContent = allBooks.length ? 'Books are saved locally in your browser.' : 'Tip: Click "Import EPUBs" to add books to your library.';
+
+      for(const r of books){
         const card=document.createElement('div'); card.className='card';
         const covWrap=document.createElement('div'); covWrap.className='coverWrap';
         const img=document.createElement('img'); img.className='cover';
@@ -231,6 +275,31 @@
         gridEl.appendChild(card);
       }
     }
+
+    /********** Pagination event wiring **********/
+    // Home pagination
+    document.querySelectorAll('.page-size-btn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        libPageSize=parseInt(btn.dataset.size);
+        localStorage.setItem('epub_libPageSize', libPageSize);
+        libPage=1;
+        renderLibrary();
+      });
+    });
+    document.getElementById('libPrevBtn').addEventListener('click',()=>{ libPage--; renderLibrary(); });
+    document.getElementById('libNextBtn').addEventListener('click',()=>{ libPage++; renderLibrary(); });
+
+    // Collections pagination
+    document.querySelectorAll('.col-size-btn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        colPageSize=parseInt(btn.dataset.size);
+        localStorage.setItem('epub_colPageSize', colPageSize);
+        colPage=1;
+        renderCollections();
+      });
+    });
+    document.getElementById('colPrevBtn').addEventListener('click',()=>{ colPage--; renderCollections(); });
+    document.getElementById('colNextBtn').addEventListener('click',()=>{ colPage++; renderCollections(); });
 
     /********** Utilities **********/
     function escapeHtml(str){
@@ -273,13 +342,33 @@
       collectionsView.style.display='block';
       collectionDetail.style.display='none';
       collectionsGrid.style.display='grid';
-      const [cols, books] = await Promise.all([idbGetAllCols(), idbGetAll()]);
+      const [allCols, books] = await Promise.all([idbGetAllCols(), idbGetAll()]);
       collectionsGrid.innerHTML='';
-      if(cols.length===0){
+      if(allCols.length===0){
         collectionsGrid.innerHTML='<p style="color:var(--muted)">No collections yet. Click <b>＋ New Collection</b> to create one.</p>';
         return;
       }
-      for(const col of cols.sort((a,b)=>a.name.localeCompare(b.name))){
+
+      const sortedCols=allCols.sort((a,b)=>a.name.localeCompare(b.name));
+      const totalPages=Math.max(1,Math.ceil(sortedCols.length/colPageSize));
+      colPage=Math.min(colPage,totalPages);
+      const start=(colPage-1)*colPageSize;
+      const cols=sortedCols.slice(start, start+colPageSize);
+
+      // Update pagination UI
+      const colPageInfo=document.getElementById('colPageInfo');
+      const colPrevBtn=document.getElementById('colPrevBtn');
+      const colNextBtn=document.getElementById('colNextBtn');
+      colPageInfo.textContent=`Page ${colPage} of ${totalPages}`;
+      colPrevBtn.disabled=colPage<=1;
+      colNextBtn.disabled=colPage>=totalPages;
+
+      // Sync active page size button
+      document.querySelectorAll('.col-size-btn').forEach(btn=>{
+        btn.classList.toggle('active', parseInt(btn.dataset.size)===colPageSize);
+      });
+
+      for(const col of cols){
         const colBooks=books.filter(b=>b.collectionId===col.id).sort((a,b)=>b.createdAt-a.createdAt);
         const count=colBooks.length;
         const card=document.createElement('div'); card.className='col-card';
@@ -457,6 +546,7 @@
         await idbAddBook(rec);
       }
       statusEl.textContent='';
+      libPage=1;
       await renderLibrary();
       importInput.value='';
     });

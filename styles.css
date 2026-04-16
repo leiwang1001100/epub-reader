@@ -1,6 +1,32 @@
 :root { --border:#e5e7eb; --muted:#6b7280; --sidebar-w:56px; }
     body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto; color:#111; }
 
+    /* ── Pagination controls ── */
+    .page-controls {
+      display: flex; align-items: center; gap: 4px;
+    }
+    .page-size-btn, .col-size-btn, button.page-size-btn, button.col-size-btn {
+      min-width: unset !important; padding: 0.2rem 0.5rem !important; font-size: 12px !important;
+      border-radius: 6px; --btn1:#6b7280; --btn2:#4b5563;
+      box-shadow: none;
+    }
+    .page-size-btn.active, .col-size-btn.active {
+      --btn1:#4f46e5; --btn2:#4338ca;
+    }
+    .page-nav-btn, button.page-nav-btn {
+      min-width: unset !important; width: 28px !important; height: 28px !important; padding: 0 !important;
+      font-size: 18px !important; border-radius: 6px;
+      --btn1:#6b7280; --btn2:#4b5563;
+      display: grid; place-items: center;
+      box-shadow: none;
+    }
+    .page-nav-btn:disabled {
+      opacity: 0.35; cursor: not-allowed; filter: none; transform: none;
+    }
+    .page-divider {
+      width: 1px; height: 18px; background: var(--border); margin: 0 4px;
+    }
+
     /* ── Sidebar ── */
     #sidebar {
       position: fixed; top: 0; left: 0; bottom: 0;
@@ -122,6 +148,10 @@
       transition: transform 0.15s, box-shadow 0.15s;
     }
     .col-card:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0,0,0,.1); }
+    .col-card .row button {
+      min-width: unset; padding: 0.35rem 0.8rem; font-size: 13px;
+      border-radius: 8px; flex: 1;
+    }
     .col-icon { font-size: 32px; }
     .col-name { font-weight:700; font-size:15px; }
     .col-count { font-size:12px; color:var(--muted); }

@@ -16,7 +16,23 @@
       background:#ffffffaa; backdrop-filter: saturate(1.1) blur(4px);
     }
 
-    #viewer { position: fixed; inset: 56px 0 64px 0; display:none; }
+    /* Reading progress bar */
+    #progressBar {
+      position: fixed; top: 56px; left: 0; right: 0;
+      height: 3px; background: #e5e7eb; z-index: 30; display: none;
+    }
+    #progressFill {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, #4f46e5, #9333ea);
+      transition: width 0.3s ease;
+    }
+    #progressLabel {
+      position: fixed; top: 58px; right: 8px;
+      font-size: 11px; color: var(--muted); z-index: 31;
+      display: none; background: #fff; padding: 0 4px; border-radius: 4px;
+    }
+
+    #viewer { position: fixed; inset: 59px 0 64px 0; display:none; }
     #controls {
       position: fixed; bottom: 0; left: 0; right: 0; padding: 0.75rem;
       display:flex; gap:0.6rem; justify-content:center; flex-wrap: wrap;
@@ -123,10 +139,14 @@
       <button id="importBtn" class="btn-purple">Import EPUBs</button>
       <span class="small" id="libHint">Imported books are saved locally and appear here next time.</span>
       <span class="spacer"></span>
-      <span class="small-badge" title="App version">v1.0.3</span>
+      <span class="small-badge" title="App version">v1.0.4</span>
     </div>
     <div id="grid"></div>
   </div>
+
+  <!-- Progress bar -->
+  <div id="progressBar"><div id="progressFill"></div></div>
+  <span id="progressLabel"></span>
 
   <!-- Reader -->
   <div id="viewer">
@@ -175,6 +195,9 @@
     const bgToggle=document.getElementById('bgToggle');
     const controls=document.getElementById('controls');
     const statusEl=document.getElementById('status');
+    const progressBar=document.getElementById('progressBar');
+    const progressFill=document.getElementById('progressFill');
+    const progressLabel=document.getElementById('progressLabel');
 
     /********** State **********/
     let book, rendition, locations;
@@ -220,6 +243,8 @@
       toLibraryBtn.style.display='none';
       searchBox.style.display='none';
       importBtn.style.display='inline-block';
+      progressBar.style.display='none';
+      progressLabel.style.display='none';
       metaEl.textContent=''; statusEl.textContent='';
 
       const rows=(await idbGetAll()).sort((a,b)=>b.createdAt-a.createdAt);
@@ -243,7 +268,10 @@
         const openBtn=document.createElement('button'); openBtn.className='btn-blue'; openBtn.textContent=r.lastCfi?'Continue':'Read';
         openBtn.onclick=()=>openBookFromDB(r.id);
         const delBtn=document.createElement('button'); delBtn.className='btn-orange'; delBtn.textContent='Delete';
-        delBtn.onclick=async()=>{await idbDelete(r.id); renderLibrary();};
+        delBtn.onclick=async()=>{
+          if(!confirm(`Delete "${r.title || 'this book'}"?\nThis cannot be undone.`)) return;
+          await idbDelete(r.id); renderLibrary();
+        };
         row.append(openBtn,delBtn);
 
         meta.append(title,author,small,row);
@@ -440,6 +468,10 @@
       toLibraryBtn.style.display='inline-block';
       searchBox.style.display='inline-block';
       importBtn.style.display='none';
+      progressBar.style.display='block';
+      progressLabel.style.display='block';
+      progressFill.style.width='0%';
+      progressLabel.textContent='';
 
       // Load the book
       const buf=await rec.bufBlob.arrayBuffer();
@@ -477,7 +509,11 @@
       rendition.on('relocated', async (loc)=>{
         try{
           const pct=book.locations?.percentageFromCfi?.(loc.start.cfi) || 0;
-          document.title=`${Math.round(pct*100)}% · ${md?.title || rec.title || 'EPUB Reader'}`;
+          const pctRounded=Math.round(pct*100);
+          document.title=`${pctRounded}% · ${md?.title || rec.title || 'EPUB Reader'}`;
+          // Update progress bar
+          progressFill.style.width=`${pctRounded}%`;
+          progressLabel.textContent=`${pctRounded}%`;
           const r=await idbGet(currentBookId);
           if(r){ r.lastCfi=loc.start.cfi; await idbAddBook(r); }
         }catch{}

@@ -182,6 +182,15 @@ async function showMoreMenu(btn, book, container){
     await idbAddBook(book);
     invalidateBooksCache();
     closeMenu();
+    // If filter is now empty after this change, reset it
+    if(!book.finished && statusFilter==='finished'){
+      const remaining=(await getCachedBooks()).filter(b=>b.finished).length;
+      if(remaining===0) statusFilter='';
+    }
+    if(book.finished && statusFilter==='progress'){
+      const remaining=(await getCachedBooks()).filter(b=>b.lastCfi && !b.finished).length;
+      if(remaining===0) statusFilter='';
+    }
     renderLibrary();
     flashStatus(book.finished ? '✅ Marked as finished!' : '↩️ Marked as unfinished');
   };

@@ -3,7 +3,7 @@
 > A lightweight, offline EPUB reader that runs entirely in your browser.  
 > No server required — works directly with `file://`.
 
-![Version](https://img.shields.io/badge/version-v1.8.0-blue)
+![Version](https://img.shields.io/badge/version-v1.8.3-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
@@ -12,29 +12,36 @@
 
 ### 🌙 Dark Theme
 - Automatically follows your **system preference** (macOS/browser dark mode setting)
-- Toggle manually with the **◑ button** at the bottom of the sidebar
+- Toggle manually with the **◑ button** in the sidebar (below the Collections icon)
 - Applies to: library, collections, sidebar, toolbar, cards, dropdowns, TOC
 - Preference saved across sessions
 - Does **not** affect the book reader (which has its own Paper/Sepia/Dark themes)
 
 ### 📚 Library
-- Import multiple EPUB files at once
+- Import multiple EPUB files at once — **SHA-256 duplicate detection** warns before importing the same book twice
 - Book cards with cover art, title, author, file size and date added
+- Books without covers show a **gradient placeholder** with title initials
 - Long titles truncated to 2 lines with full title on hover
+- Book cards **lift and scale** on hover
 - **Search** — filter books by title or author as you type
 - **Sort** — by Newest, Oldest, Title A–Z, Title Z–A
 - **Collection filter** — show all, uncategorised, or a specific collection
+- **Status filter** — click `📖 in progress` or `✅ finished` in the stats bar to filter
+- **Stats bar** — shows 📚 total · 📖 in progress · ✅ finished counts
 - **Pagination** — choose 20 / 50 / 100 books per page, preference saved across sessions
 - **Collections** — organise books into named folders
 - Assign/move books to collections via the `···` menu on each card (scrollable, keyboard navigable)
+- **Mark as finished** — via `···` menu or auto-detected at 99% reading progress
+- **✓ badge** — finished books show a glass checkmark badge on their card
 - Delete books with confirmation dialog
 
 ### 📁 Collections
 - Create named collections (max 50 characters, no duplicates)
+- **Rename** a collection — with duplicate and length validation
 - Collections display cover art of the most recently added book
 - Paginated collection grid (20 / 50 / 100 per page)
 - Open a collection to view its books
-- Remove books from a collection without deleting them
+- Remove books from a collection without deleting them (via `···` menu)
 - Delete a collection — books return to the main library
 
 ### 📖 Reader

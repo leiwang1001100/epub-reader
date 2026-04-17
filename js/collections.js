@@ -113,12 +113,12 @@ function closeMenu(){ if(activeMenu){ activeMenu.remove(); activeMenu=null; } }
 
 async function showMoreMenu(btn, book, container){
   closeMenu();
-  const cols=await idbGetAllCols();
+  const cols=await getCachedCols();
   const menu=document.createElement('div'); menu.className='more-menu';
   menu.onclick=e=>e.stopPropagation();
 
   const hdr=document.createElement('div');
-  hdr.style.cssText='padding:4px 14px;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;';
+  hdr.style.cssText='padding:4px 14px;font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;';
   hdr.textContent='Add to Collection';
   menu.appendChild(hdr);
 

@@ -86,8 +86,8 @@ function renderLibrary_hide(){
   document.body.classList.add('mode-library');
 }
 
-sideHome.onclick=async()=>{ await openDB(); if(typeof rendition!=='undefined'&&rendition) await unloadBook(); collectionsView.style.display='none'; renderLibrary(); setSidebarActive('home'); };
-sideCollections.onclick=async()=>{ await openDB(); if(typeof rendition!=='undefined'&&rendition) await unloadBook(); renderLibrary_hide(); renderCollections(); setSidebarActive('collections'); };
+sideHome.onclick=async()=>{ await openDB(); if(isReading()) await unloadBook(); collectionsView.style.display='none'; renderLibrary(); setSidebarActive('home'); };
+sideCollections.onclick=async()=>{ await openDB(); if(isReading()) await unloadBook(); renderLibrary_hide(); renderCollections(); setSidebarActive('collections'); };
 
 /********** Pagination event wiring **********/
 // Home pagination

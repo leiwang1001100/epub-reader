@@ -5,6 +5,8 @@ let currentBookId=null;
 let _keyHandler=null;
 let _resizeHandler=null;
 
+function isReading(){ return !!rendition; }
+
 const bgModes=['paper','sepia','dark'];
 const BG_COLORS={paper:{bg:'#fdfaf3',fg:'#2b2b2b'},sepia:{bg:'#f4ecd8',fg:'#3b2f1a'},dark:{bg:'#111',fg:'#eee'}};
 

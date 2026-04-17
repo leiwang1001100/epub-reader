@@ -135,6 +135,8 @@ window.addEventListener('unhandledrejection', e=>console.error('Promise rejectio
     initImport();
     initCollections();
     await renderLibrary();
+    // Backfill hashes for books imported before v1.4.1 (runs silently in background)
+    backfillHashes().catch(e=>console.warn('Hash backfill error:', e));
   }catch(err){
     console.error('Init failed:', err);
     const msg=escapeHtml(String(err?.message||err));

@@ -122,6 +122,23 @@ async function renderLibrary(){
 }
 
 /********** Import **********/
+/********** Hash backfill for existing books **********/
+async function backfillHashes(){
+  const books=await idbGetAll();
+  const missing=books.filter(b=>!b.hash && b.bufBlob);
+  if(!missing.length) return;
+  console.log(`Backfilling hashes for ${missing.length} book(s)...`);
+  for(const b of missing){
+    try{
+      const buf=await b.bufBlob.arrayBuffer();
+      b.hash=await sha256(buf);
+      await idbAddBook(b);
+    }catch(e){ console.warn(`Hash backfill failed for "${b.title}":`, e); }
+  }
+  invalidateBooksCache();
+  console.log('Hash backfill complete.');
+}
+
 function initImport(){
   importBtn.onclick=()=>importInput.click();
   importInput.addEventListener('change', async ()=>{

@@ -72,12 +72,12 @@ async function renderCollections(){
       await idbAddCol(col);
       invalidateColsCache();
       renderCollections();
-      flashStatus(`Renamed to "${escapeHtml(newName)}"`);
+      flashStatus(`Renamed to "${newName}"`);
     };
     const delBtn=document.createElement('button'); delBtn.className='btn-orange'; delBtn.textContent='✖'; delBtn.title='Delete collection';
     delBtn.onclick=async(e)=>{
       e.stopPropagation();
-      if(!confirm(`Delete collection "${escapeHtml(col.name)}"?\nBooks will remain in your library.`)) return;
+      if(!confirm(`Delete collection "${col.name}"?\nBooks will remain in your library.`)) return;
       const toUpdate=books.filter(b=>b.collectionId===col.id);
       await Promise.all(toUpdate.map(b=>{ b.collectionId=null; return idbAddBook(b); }));
       await idbDeleteCol(col.id);
@@ -202,7 +202,7 @@ async function showMoreMenu(btn, book, container){
     await idbAddBook(book);
     invalidateAllCache();
     renderLibrary();
-    flashStatus(`Added to "${escapeHtml(col.name)}"`);
+    flashStatus(`Added to "${col.name}"`);
   };
   menu.appendChild(newItem);
 

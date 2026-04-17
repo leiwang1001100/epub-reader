@@ -44,6 +44,10 @@ async function renderLibrary(){
   if(colFilter==='__none__') filteredBooks=filteredBooks.filter(b=>!b.collectionId);
   else if(colFilter) filteredBooks=filteredBooks.filter(b=>b.collectionId===colFilter);
 
+  // Filter by status (in progress / finished)
+  if(statusFilter==='progress') filteredBooks=filteredBooks.filter(b=>b.lastCfi && !b.finished);
+  else if(statusFilter==='finished') filteredBooks=filteredBooks.filter(b=>b.finished);
+
   // Filter by search
   const q=(libSearch.value||'').trim().toLowerCase();
   if(q) filteredBooks=filteredBooks.filter(b=>(b.title||'').toLowerCase().includes(q)||(b.author||'').toLowerCase().includes(q));
@@ -72,9 +76,30 @@ async function renderLibrary(){
 
   gridEl.innerHTML='';
   const total=filteredBooks.length;
-  libHint.textContent = total
-    ? `Showing ${Math.min(start+1, total)}–${Math.min(start+libPageSize, total)} of ${total} book${total!==1?'s':''}`
-    : (q||colFilter ? 'No books match your search.' : 'Tip: Click "Import EPUBs" to add books to your library.');
+  if(total){
+    const inProgressCount=allBooks.filter(b=>b.lastCfi && !b.finished).length;
+    const finishedCount=allBooks.filter(b=>b.finished).length;
+    libHint.innerHTML='';
+
+    const totalSpan=document.createElement('span');
+    totalSpan.textContent=`📚 ${allBooks.length} total`;
+    totalSpan.style.cssText='margin-right:8px;';
+
+    const progSpan=document.createElement('span');
+    progSpan.textContent=`📖 ${inProgressCount} in progress`;
+    progSpan.style.cssText=`cursor:pointer;margin-right:8px;font-weight:${statusFilter==='progress'?'700':'400'};text-decoration:${statusFilter==='progress'?'underline':'none'};color:${statusFilter==='progress'?'#4f46e5':'inherit'};`;
+    progSpan.onclick=()=>{ statusFilter=statusFilter==='progress'?'':'progress'; libPage=1; renderLibrary(); };
+
+    const finSpan=document.createElement('span');
+    finSpan.textContent=`✅ ${finishedCount} finished`;
+    finSpan.style.cssText=`cursor:pointer;font-weight:${statusFilter==='finished'?'700':'400'};text-decoration:${statusFilter==='finished'?'underline':'none'};color:${statusFilter==='finished'?'#16a34a':'inherit'};`;
+    finSpan.onclick=()=>{ statusFilter=statusFilter==='finished'?'':'finished'; libPage=1; renderLibrary(); };
+
+    const sep=()=>{ const s=document.createElement('span'); s.textContent='  ·  '; s.style.color='var(--text-muted)'; return s; };
+    libHint.append(totalSpan, sep(), progSpan, sep(), finSpan);
+  } else {
+    libHint.textContent=q||colFilter ? 'No books match your search.' : 'Tip: Click "Import EPUBs" to add books to your library.';
+  }
 
   for(const r of books){
     // Delete button

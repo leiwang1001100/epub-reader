@@ -59,6 +59,14 @@ function createBookCard(r, onRead, extraButtons=[]){
   // ··· more button
   const moreBtn=document.createElement('button'); moreBtn.className='btn-more'; moreBtn.textContent='···'; moreBtn.title='More options';
 
+  // Finished badge
+  if(r.finished){
+    const badge=document.createElement('div'); badge.className='finished-badge';
+    badge.textContent='✓';
+    badge.title='Finished';
+    card.appendChild(badge);
+  }
+
   meta.append(title, author, row);
   card.append(covWrap, meta, moreBtn);
   return { card, moreBtn };

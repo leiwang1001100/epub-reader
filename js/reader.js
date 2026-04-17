@@ -226,7 +226,16 @@ async function openBookFromDB(id){
       progressFill.style.width=`${pctRounded}%`;
       progressLabel.textContent=`${pctRounded}%`;
       const r=await idbGet(currentBookId);
-      if(r){ r.lastCfi=loc.start.cfi; await idbAddBook(r); }
+      if(r){
+        r.lastCfi=loc.start.cfi;
+        // Auto-mark as finished at 95%+
+        if(pctRounded>=99 && !r.finished){
+          r.finished=true; r.finishedAt=Date.now();
+          invalidateBooksCache();
+          flashStatus('📖 Marked as finished!');
+        }
+        await idbAddBook(r);
+      }
     }catch{}
   });
 

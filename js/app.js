@@ -40,6 +40,9 @@ const colPageInfo=document.getElementById('colPageInfo');
 const colPrevBtn=document.getElementById('colPrevBtn');
 const colNextBtn=document.getElementById('colNextBtn');
 
+/********** Status filter state **********/
+let statusFilter=''; // '' = all, 'progress' = in progress, 'finished' = finished
+
 /********** Pagination state **********/
 const VALID_PAGE_SIZES=[20,50,100];
 function clampPageSize(val){ const n=parseInt(val,10); return VALID_PAGE_SIZES.includes(n)?n:20; }
@@ -86,7 +89,7 @@ function renderLibrary_hide(){
   document.body.classList.add('mode-library');
 }
 
-sideHome.onclick=async()=>{ await openDB(); if(isReading()) await unloadBook(); collectionsView.style.display='none'; renderLibrary(); setSidebarActive('home'); };
+sideHome.onclick=async()=>{ await openDB(); if(isReading()) await unloadBook(); statusFilter=''; collectionsView.style.display='none'; renderLibrary(); setSidebarActive('home'); };
 sideCollections.onclick=async()=>{ await openDB(); if(isReading()) await unloadBook(); renderLibrary_hide(); renderCollections(); setSidebarActive('collections'); };
 
 /********** Pagination event wiring **********/

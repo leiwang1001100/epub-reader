@@ -69,6 +69,8 @@ function sanitiseBook(r){
     createdAt: typeof r.createdAt==='number' ? r.createdAt : Date.now(),
     collectionId: typeof r.collectionId==='string' && UUID_REGEX.test(r.collectionId) ? r.collectionId : null,
     lastCfi: typeof r.lastCfi==='string' ? r.lastCfi : null,
+    finished: r.finished===true,
+    finishedAt: typeof r.finishedAt==='number' ? r.finishedAt : null,
   };
 }
 

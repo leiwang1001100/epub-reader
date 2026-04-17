@@ -151,6 +151,26 @@ async function showMoreMenu(btn, book, container){
   }
   menu.appendChild(scrollWrap);
 
+  // Finished toggle
+  const finDivider=document.createElement('div');
+  finDivider.style.cssText='border-top:1px solid var(--border);margin:4px 0;';
+  menu.appendChild(finDivider);
+
+  const finItem=document.createElement('div'); finItem.className='more-menu-item';
+  finItem.innerHTML=book.finished
+    ? `<span>↩️</span><span>Mark as unfinished</span>`
+    : `<span>✅</span><span>Mark as finished</span>`;
+  finItem.onclick=async()=>{
+    book.finished=!book.finished;
+    book.finishedAt=book.finished ? Date.now() : null;
+    await idbAddBook(book);
+    invalidateBooksCache();
+    closeMenu();
+    renderLibrary();
+    flashStatus(book.finished ? '✅ Marked as finished!' : '↩️ Marked as unfinished');
+  };
+  menu.appendChild(finItem);
+
   const divider=document.createElement('div');
   divider.style.cssText='border-top:1px solid var(--border);margin:4px 0;';
   menu.appendChild(divider);

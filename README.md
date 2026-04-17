@@ -76,6 +76,11 @@
 1. Go to 👉 [Releases](https://github.com/leiwang1001100/epub-reader/releases) and download the latest **`Source code (zip)`** or **`Source code (tar.gz)`**
 2. Extract the archive to any folder on your computer
 3. Open `index.html` in your browser — no server needed!
+   - Double-click `index.html`, or open your browser and type:
+   ```
+   file:///your/path/to/epub-reader/index.html
+   ```
+   For example: `file:///Users/john/Downloads/epub-reader/index.html`
 4. Click **Import EPUBs** to add books from your computer
 
 ### Option B — Clone with Git

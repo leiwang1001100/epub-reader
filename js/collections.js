@@ -58,7 +58,23 @@ async function renderCollections(){
     const row=document.createElement('div'); row.className='row';
     const openBtn=document.createElement('button'); openBtn.className='btn-blue'; openBtn.textContent='Open';
     openBtn.onclick=(e)=>{ e.stopPropagation(); openCollectionDetail(col); };
-    const delBtn=document.createElement('button'); delBtn.className='btn-orange'; delBtn.textContent='Delete'; delBtn.title='Delete collection';
+    const renameBtn=document.createElement('button'); renameBtn.className='btn-green'; renameBtn.textContent='✎'; renameBtn.title='Rename collection';
+    renameBtn.onclick=async(e)=>{
+      e.stopPropagation();
+      const newName=(prompt(`Rename "${col.name}" to:`, col.name)||'').trim();
+      if(!newName || newName===col.name) return;
+      if(newName.length>MAX_COL_NAME){ alert(`Collection name is too long (max ${MAX_COL_NAME} characters).`); return; }
+      const existing=await idbGetAllCols();
+      if(existing.some(c=>c.id!==col.id && c.name.toLowerCase()===newName.toLowerCase())){
+        alert(`A collection named "${newName}" already exists.`); return;
+      }
+      col.name=newName;
+      await idbAddCol(col);
+      invalidateColsCache();
+      renderCollections();
+      flashStatus(`Renamed to "${escapeHtml(newName)}"`);
+    };
+    const delBtn=document.createElement('button'); delBtn.className='btn-orange'; delBtn.textContent='✖'; delBtn.title='Delete collection';
     delBtn.onclick=async(e)=>{
       e.stopPropagation();
       if(!confirm(`Delete collection "${escapeHtml(col.name)}"?\nBooks will remain in your library.`)) return;
@@ -68,7 +84,7 @@ async function renderCollections(){
       invalidateAllCache();
       renderCollections();
     };
-    row.append(openBtn, delBtn);
+    row.append(openBtn, renameBtn, delBtn);
     card.append(icon, name, cnt, row);
     card.ondblclick=()=>openCollectionDetail(col);
     collectionsGrid.appendChild(card);

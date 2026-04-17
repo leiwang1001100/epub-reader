@@ -23,7 +23,39 @@ function openDB(){
   });
 }
 
-function idbAddBook(record){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);tx.objectStore(STORE).put(record);});}
+/********** Transaction helpers **********/
+function txGet(store, id){
+  return new Promise((res,rej)=>{
+    const rq=db.transaction(store,'readonly').objectStore(store).get(id);
+    rq.onsuccess=()=>res(rq.result||null);
+    rq.onerror=()=>rej(rq.error);
+  });
+}
+function txGetAll(store){
+  return new Promise((res,rej)=>{
+    const rq=db.transaction(store,'readonly').objectStore(store).getAll();
+    rq.onsuccess=()=>res(rq.result||[]);
+    rq.onerror=()=>rej(rq.error);
+  });
+}
+function txPut(store, record){
+  return new Promise((res,rej)=>{
+    const tx=db.transaction(store,'readwrite');
+    tx.oncomplete=()=>res();
+    tx.onerror=()=>rej(tx.error);
+    tx.objectStore(store).put(record);
+  });
+}
+function txDelete(store, id){
+  return new Promise((res,rej)=>{
+    const tx=db.transaction(store,'readwrite');
+    tx.oncomplete=()=>res();
+    tx.onerror=()=>rej(tx.error);
+    tx.objectStore(store).delete(id);
+  });
+}
+
+/********** Validation **********/
 const UUID_REGEX=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function sanitiseBook(r){
@@ -40,11 +72,13 @@ function sanitiseBook(r){
   };
 }
 
-function idbGetAll(){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readonly');const rq=tx.objectStore(STORE).getAll();rq.onsuccess=()=>res((rq.result||[]).map(sanitiseBook));rq.onerror=()=>rej(rq.error);});}
-function idbGet(id){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readonly');const rq=tx.objectStore(STORE).get(id);rq.onsuccess=()=>res(sanitiseBook(rq.result||null));rq.onerror=()=>rej(rq.error);});}
-function idbDelete(id){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).delete(id);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);});}
+/********** Books API **********/
+function idbAddBook(record){ return txPut(STORE, record); }
+async function idbGetAll(){ return (await txGetAll(STORE)).map(sanitiseBook); }
+async function idbGet(id){ return sanitiseBook(await txGet(STORE, id)); }
+function idbDelete(id){ return txDelete(STORE, id); }
 
-// Collections CRUD
-function idbAddCol(col){return new Promise((res,rej)=>{const tx=db.transaction(COL_STORE,'readwrite');tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);tx.objectStore(COL_STORE).put(col);});}
-function idbGetAllCols(){return new Promise((res,rej)=>{const tx=db.transaction(COL_STORE,'readonly');const rq=tx.objectStore(COL_STORE).getAll();rq.onsuccess=()=>res(rq.result||[]);rq.onerror=()=>rej(rq.error);});}
-function idbDeleteCol(id){return new Promise((res,rej)=>{const tx=db.transaction(COL_STORE,'readwrite');tx.objectStore(COL_STORE).delete(id);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);});}
+/********** Collections API **********/
+function idbAddCol(col){ return txPut(COL_STORE, col); }
+function idbGetAllCols(){ return txGetAll(COL_STORE); }
+function idbDeleteCol(id){ return txDelete(COL_STORE, id); }

@@ -38,6 +38,7 @@ async function renderCollections(){
     if(latestBook?.coverBlob){
       const img=document.createElement('img');
       img.alt=latestBook.title||'Book cover';
+      img.loading='lazy';
       img.style.cssText='width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:4px;';
       const blobUrl=URL.createObjectURL(latestBook.coverBlob);
       img.src=blobUrl;
@@ -60,6 +61,7 @@ async function renderCollections(){
       const toUpdate=books.filter(b=>b.collectionId===col.id);
       await Promise.all(toUpdate.map(b=>{ b.collectionId=null; return idbAddBook(b); }));
       await idbDeleteCol(col.id);
+      invalidateAllCache();
       renderCollections();
     };
     row.append(openBtn, delBtn);
@@ -98,7 +100,7 @@ async function showCollectionDetailMenu(btn, book, card, col){
 
   const removeItem=document.createElement('div'); removeItem.className='more-menu-item';
   removeItem.innerHTML=`<span>✖</span><span>Remove from collection</span>`;
-  removeItem.onclick=async()=>{ book.collectionId=null; await idbAddBook(book); closeMenu(); openCollectionDetail(col); };
+  removeItem.onclick=async()=>{ book.collectionId=null; await idbAddBook(book); invalidateBooksCache(); closeMenu(); openCollectionDetail(col); };
   menu.appendChild(removeItem);
 
   card.appendChild(menu);
@@ -126,7 +128,7 @@ async function showMoreMenu(btn, book, container){
   const noneItem=document.createElement('div'); noneItem.className='more-menu-item'+(book.collectionId===null?' selected':'');
   if(book.collectionId===null) noneItem.style.color='#4f46e5';
   noneItem.innerHTML=`<span>🚫</span><span>None</span>`;
-  noneItem.onclick=async()=>{ book.collectionId=null; await idbAddBook(book); closeMenu(); renderLibrary(); };
+  noneItem.onclick=async()=>{ book.collectionId=null; await idbAddBook(book); invalidateBooksCache(); closeMenu(); renderLibrary(); };
   scrollWrap.appendChild(noneItem);
 
   if(cols.length){
@@ -134,7 +136,7 @@ async function showMoreMenu(btn, book, container){
       const item=document.createElement('div'); item.className='more-menu-item';
       if(book.collectionId===col.id) item.style.color='#4f46e5';
       item.innerHTML=`<span>📁</span><span>${escapeHtml(col.name)}${book.collectionId===col.id?' ✓':''}</span>`;
-      item.onclick=async()=>{ book.collectionId=col.id; await idbAddBook(book); closeMenu(); renderLibrary(); };
+      item.onclick=async()=>{ book.collectionId=col.id; await idbAddBook(book); invalidateBooksCache(); closeMenu(); renderLibrary(); };
       scrollWrap.appendChild(item);
     }
   } else {
@@ -158,6 +160,7 @@ async function showMoreMenu(btn, book, container){
     if(!col) return;
     book.collectionId=col.id;
     await idbAddBook(book);
+    invalidateAllCache();
     renderLibrary();
     flashStatus(`Added to "${escapeHtml(col.name)}"`);
   };
@@ -186,6 +189,7 @@ function initCollections(){
   newCollectionBtn.onclick=async()=>{
     const col=await promptNewCollection();
     if(!col) return;
+    invalidateColsCache();
     renderCollections();
   };
   document.addEventListener('click', (e)=>{ if(activeMenu && !activeMenu.contains(e.target)) closeMenu(); });

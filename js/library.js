@@ -1,4 +1,15 @@
 'use strict';
+/********** In-memory cache **********/
+let _booksCache=null;
+let _colsCache=null;
+
+function invalidateBooksCache(){ _booksCache=null; }
+function invalidateColsCache(){ _colsCache=null; }
+function invalidateAllCache(){ _booksCache=null; _colsCache=null; }
+
+async function getCachedBooks(){ if(!_booksCache) _booksCache=await idbGetAll(); return _booksCache; }
+async function getCachedCols(){ if(!_colsCache) _colsCache=await idbGetAllCols(); return _colsCache; }
+
 /********** Library **********/
 async function renderLibrary(){
   document.body.classList.add('mode-library');
@@ -14,8 +25,8 @@ async function renderLibrary(){
   setSidebarActive('home');
   metaEl.textContent=''; statusEl.textContent='';
 
-  // Populate collection filter dropdown + fetch all books in parallel
-  const [allCols, allBooks]=await Promise.all([idbGetAllCols(), idbGetAll()]);
+  // Populate collection filter dropdown + fetch all books (from cache if available)
+  const [allCols, allBooks]=await Promise.all([getCachedCols(), getCachedBooks()]);
   const prevColVal=libColFilter.value;
   const optionsHtml = [
     '<option value="">📁 All Collections</option>',
@@ -70,7 +81,7 @@ async function renderLibrary(){
     const delBtn=document.createElement('button'); delBtn.className='btn-orange'; delBtn.textContent='✖'; delBtn.title='Delete book';
     delBtn.onclick=async()=>{
       if(!confirm(`Delete "${r.title||'this book'}"?\nThis cannot be undone.`)) return;
-      await idbDelete(r.id); renderLibrary();
+      await idbDelete(r.id); invalidateBooksCache(); renderLibrary();
     };
 
     const {card, moreBtn}=createBookCard(r, openBookFromDB, [delBtn]);
@@ -123,6 +134,7 @@ function initImport(){
     if(imported) msg.push(`${imported} book${imported!==1?'s':''} imported`);
     if(skipped) msg.push(`${skipped} skipped`);
     if(msg.length) flashStatus(msg.join(', '));
+    invalidateAllCache();
     libPage=1;
     await renderLibrary();
     importInput.value='';

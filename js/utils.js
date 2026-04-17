@@ -16,7 +16,7 @@ function createBookCard(r, onRead, extraButtons=[]){
 
   // Cover image
   const covWrap=document.createElement('div'); covWrap.className='coverWrap';
-  const img=document.createElement('img'); img.className='cover'; img.alt=r.title||'Book cover';
+  const img=document.createElement('img'); img.className='cover'; img.alt=r.title||'Book cover'; img.loading='lazy';
   if(r.coverBlob){
     const blobUrl=URL.createObjectURL(r.coverBlob);
     img.src=blobUrl;

@@ -72,14 +72,23 @@
 
 ## 🛠️ Setup
 
-1. Clone or download the repository:
-   ```bash
-   git clone https://github.com/leiwang1001100/epub-reader.git
-   ```
-2. Open `index.html` directly in your browser — no server needed.
-3. Click **Import EPUBs** to add books from your computer.
+### Option A — Download ZIP (Easiest)
+1. Go to 👉 [Releases](https://github.com/leiwang1001100/epub-reader/releases) and download the latest **`Source code (zip)`** or **`Source code (tar.gz)`**
+2. Extract the archive to any folder on your computer
+3. Open `index.html` in your browser — no server needed!
+4. Click **Import EPUBs** to add books from your computer
 
-> 💡 Books are stored locally in your browser's **IndexedDB** and persist across sessions.
+### Option B — Clone with Git
+```bash
+git clone https://github.com/leiwang1001100/epub-reader.git
+cd epub-reader
+open index.html   # macOS
+# or double-click index.html in your file explorer
+```
+
+> 💡 Books are stored locally in your browser's **IndexedDB** and persist across sessions — even after closing the browser.
+
+> ⚠️ Keep all files (`index.html`, `styles.css`, `js/` folder) together in the same directory.
 
 ---
 

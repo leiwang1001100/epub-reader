@@ -3,7 +3,7 @@
 > A lightweight, offline EPUB reader that runs entirely in your browser.  
 > No server required — works directly with `file://`.
 
-![Version](https://img.shields.io/badge/version-v1.7.6-blue)
+![Version](https://img.shields.io/badge/version-v1.7.9-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
@@ -93,7 +93,9 @@ open index.html   # macOS
 
 > 💡 Books are stored locally in your browser's **IndexedDB** and persist across sessions — even after closing the browser.
 
-> ⚠️ Keep all files (`index.html`, `styles.css`, `js/` folder) together in the same directory.
+> ⚠️ Keep all files (`index.html`, `styles.css`, `js/` folder, and `lib/` folder) together in the same directory.
+
+> ✅ The app works **fully offline** — all dependencies (`JSZip`, `epub.js`) are bundled locally in the `lib/` folder. No internet connection required.
 
 ---
 
@@ -110,6 +112,9 @@ epub_app/
 │   ├── collections.js  # Collections view, menus & detail view
 │   ├── reader.js       # Book reader, TOC, search, progress
 │   └── app.js          # App boot, element refs, event wiring
+├── lib/
+│   ├── jszip.min.js    # JSZip (bundled locally — no CDN needed)
+│   └── epub.min.js     # epub.js (bundled locally — no CDN needed)
 └── README.md
 ```
 

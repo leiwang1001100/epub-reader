@@ -8,6 +8,23 @@ function escapeHtml(str){return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').r
 
 const MAX_COL_NAME=50;
 
+// Generate initials from a title string
+function getInitials(title){
+  if(!title) return '?';
+  return title.trim().split(/\s+/).slice(0,2).map(w=>w[0].toUpperCase()).join('');
+}
+
+// Create a cover placeholder element for books without covers
+function makeCoverPlaceholder(r){
+  const div=document.createElement('div'); div.className='cover-placeholder';
+  const initials=document.createElement('div'); initials.className='cover-placeholder-initials';
+  initials.textContent=getInitials(r.title);
+  const titleEl=document.createElement('div'); titleEl.className='cover-placeholder-title';
+  titleEl.textContent=r.title||'Untitled';
+  div.append(initials, titleEl);
+  return div;
+}
+
 // Shared book card builder — used by library.js and collections.js
 // onRead: callback when Read/Continue clicked
 // extraButtons: optional array of additional button elements
@@ -16,14 +33,16 @@ function createBookCard(r, onRead, extraButtons=[]){
 
   // Cover image
   const covWrap=document.createElement('div'); covWrap.className='coverWrap';
-  const img=document.createElement('img'); img.className='cover'; img.alt=r.title||'Book cover'; img.loading='lazy';
   if(r.coverBlob){
+    const img=document.createElement('img'); img.className='cover'; img.alt=r.title||'Book cover'; img.loading='lazy';
     const blobUrl=URL.createObjectURL(r.coverBlob);
     img.src=blobUrl;
     img.onload=()=>URL.revokeObjectURL(blobUrl);
-    img.onerror=()=>URL.revokeObjectURL(blobUrl);
+    img.onerror=()=>{ URL.revokeObjectURL(blobUrl); img.replaceWith(makeCoverPlaceholder(r)); };
+    covWrap.appendChild(img);
+  } else {
+    covWrap.appendChild(makeCoverPlaceholder(r));
   }
-  covWrap.appendChild(img);
 
   // Meta
   const meta=document.createElement('div'); meta.className='meta';

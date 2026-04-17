@@ -43,8 +43,12 @@ async function renderCollections(){
       const blobUrl=URL.createObjectURL(latestBook.coverBlob);
       img.src=blobUrl;
       img.onload=()=>URL.revokeObjectURL(blobUrl);
-      img.onerror=()=>URL.revokeObjectURL(blobUrl);
+      img.onerror=()=>{ URL.revokeObjectURL(blobUrl); icon.textContent='📁'; };
       icon.appendChild(img);
+    } else if(latestBook){
+      const ph=makeCoverPlaceholder(latestBook);
+      ph.style.cssText='width:100%;height:120px;border-radius:8px;margin-bottom:4px;font-size:1.5rem;';
+      icon.appendChild(ph);
     } else {
       icon.textContent='📁';
     }

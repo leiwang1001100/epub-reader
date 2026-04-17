@@ -10,6 +10,13 @@
 
 ## ✨ Features
 
+### 🌙 Dark Theme
+- Automatically follows your **system preference** (macOS/browser dark mode setting)
+- Toggle manually with the **◑ button** at the bottom of the sidebar
+- Applies to: library, collections, sidebar, toolbar, cards, dropdowns, TOC
+- Preference saved across sessions
+- Does **not** affect the book reader (which has its own Paper/Sepia/Dark themes)
+
 ### 📚 Library
 - Import multiple EPUB files at once
 - Book cards with cover art, title, author, file size and date added

@@ -182,14 +182,21 @@ async function showMoreMenu(btn, book, container){
     await idbAddBook(book);
     invalidateBooksCache();
     closeMenu();
-    // If filter is now empty after this change, reset it
-    if(!book.finished && statusFilter==='finished'){
-      const remaining=(await getCachedBooks()).filter(b=>b.finished).length;
-      if(remaining===0) statusFilter='';
-    }
-    if(book.finished && statusFilter==='progress'){
-      const remaining=(await getCachedBooks()).filter(b=>b.lastCfi && !b.finished).length;
-      if(remaining===0) statusFilter='';
+    // If filter is now empty after this change, reset statusFilter
+    // Must check within currently active collection + search filters, not globally
+    if(statusFilter==='finished' || statusFilter==='progress'){
+      let remaining=await getCachedBooks();
+      // Apply same collection filter as renderLibrary
+      const colFilter=libColFilter.value;
+      if(colFilter==='__none__') remaining=remaining.filter(b=>!b.collectionId);
+      else if(colFilter) remaining=remaining.filter(b=>b.collectionId===colFilter);
+      // Apply same search filter
+      const q=(libSearch.value||'').trim().toLowerCase();
+      if(q) remaining=remaining.filter(b=>(b.title||'').toLowerCase().includes(q)||(b.author||'').toLowerCase().includes(q));
+      // Apply status filter
+      if(statusFilter==='finished') remaining=remaining.filter(b=>b.finished);
+      else if(statusFilter==='progress') remaining=remaining.filter(b=>b.lastCfi && !b.finished);
+      if(remaining.length===0) statusFilter='';
     }
     renderLibrary();
     flashStatus(book.finished ? '✅ Marked as finished!' : '↩️ Marked as unfinished');

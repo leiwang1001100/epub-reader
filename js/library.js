@@ -145,41 +145,49 @@ function initImport(){
     const files=Array.from(importInput.files||[]); if(!files.length)return;
     await openDB();
     const existingBooks=await idbGetAll();
-    let imported=0, skipped=0;
+    let imported=0, skipped=0, failed=0;
     const total=files.length;
 
-    for(let i=0;i<files.length;i++){
-      const f=files[i];
-      statusEl.textContent=`Importing ${i+1}/${total}: ${f.name}…`;
-      const buf=await f.arrayBuffer();
-      const hash=await sha256(buf);
+    try{
+      for(let i=0;i<files.length;i++){
+        const f=files[i];
+        statusEl.textContent=`Importing ${i+1}/${total}: ${f.name}…`;
+        try{
+          const buf=await f.arrayBuffer();
+          const hash=await sha256(buf);
 
-      // Check for duplicate by hash
-      const duplicate=existingBooks.find(b=>b.hash===hash);
-      if(duplicate){
-        const replace=confirm(`"${duplicate.title||f.name}" is already in your library.\n\nDo you want to replace it?`);
-        if(replace){
-          await idbDelete(duplicate.id);
-        } else {
-          skipped++;
-          continue;
+          // Check for duplicate by hash
+          const duplicate=existingBooks.find(b=>b.hash===hash);
+          if(duplicate){
+            const replace=confirm(`"${duplicate.title||f.name}" is already in your library.\n\nDo you want to replace it?`);
+            if(replace){
+              await idbDelete(duplicate.id);
+            } else {
+              skipped++;
+              continue;
+            }
+          }
+
+          const rec=await extractBookRecord(buf, f.name, f.size);
+          await idbAddBook(rec);
+          imported++;
+        }catch(e){
+          console.error(`Failed to import "${f.name}":`, e);
+          failed++;
         }
       }
-
-      const rec=await extractBookRecord(buf, f.name, f.size);
-      await idbAddBook(rec);
-      imported++;
+    }finally{
+      statusEl.textContent='';
+      const msg=[];
+      if(imported) msg.push(`${imported} book${imported!==1?'s':''} imported`);
+      if(skipped) msg.push(`${skipped} skipped`);
+      if(failed) msg.push(`${failed} failed`);
+      if(msg.length) flashStatus(msg.join(', '));
+      invalidateAllCache();
+      libPage=1;
+      await renderLibrary();
+      importInput.value='';
     }
-
-    statusEl.textContent='';
-    const msg=[];
-    if(imported) msg.push(`${imported} book${imported!==1?'s':''} imported`);
-    if(skipped) msg.push(`${skipped} skipped`);
-    if(msg.length) flashStatus(msg.join(', '));
-    invalidateAllCache();
-    libPage=1;
-    await renderLibrary();
-    importInput.value='';
   });
 }
 

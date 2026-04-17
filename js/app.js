@@ -30,6 +30,15 @@ const statusEl=document.getElementById('status');
 const progressBar=document.getElementById('progressBar');
 const progressFill=document.getElementById('progressFill');
 const progressLabel=document.getElementById('progressLabel');
+const libPageInfo=document.getElementById('libPageInfo');
+const libPrevBtn=document.getElementById('libPrevBtn');
+const libNextBtn=document.getElementById('libNextBtn');
+const libSearch=document.getElementById('libSearch');
+const libColFilter=document.getElementById('libColFilter');
+const libSort=document.getElementById('libSort');
+const colPageInfo=document.getElementById('colPageInfo');
+const colPrevBtn=document.getElementById('colPrevBtn');
+const colNextBtn=document.getElementById('colNextBtn');
 
 /********** Pagination state **********/
 let libPageSize=parseInt(localStorage.getItem('epub_libPageSize')||'20',10);
@@ -88,8 +97,8 @@ document.querySelectorAll('.page-size-btn').forEach(btn=>{
     renderLibrary();
   });
 });
-document.getElementById('libPrevBtn').addEventListener('click',()=>{ libPage--; renderLibrary(); });
-document.getElementById('libNextBtn').addEventListener('click',()=>{ libPage++; renderLibrary(); });
+libPrevBtn.addEventListener('click',()=>{ libPage--; renderLibrary(); });
+libNextBtn.addEventListener('click',()=>{ libPage++; renderLibrary(); });
 
 // Collections pagination
 document.querySelectorAll('.col-size-btn').forEach(btn=>{
@@ -100,13 +109,13 @@ document.querySelectorAll('.col-size-btn').forEach(btn=>{
     renderCollections();
   });
 });
-document.getElementById('colPrevBtn').addEventListener('click',()=>{ colPage--; renderCollections(); });
-document.getElementById('colNextBtn').addEventListener('click',()=>{ colPage++; renderCollections(); });
+colPrevBtn.addEventListener('click',()=>{ colPage--; renderCollections(); });
+colNextBtn.addEventListener('click',()=>{ colPage++; renderCollections(); });
 
 /********** Library search/sort/filter **********/
-document.getElementById('libSearch').addEventListener('input',()=>{ libPage=1; renderLibrary(); });
-document.getElementById('libColFilter').addEventListener('change',()=>{ libPage=1; renderLibrary(); });
-document.getElementById('libSort').addEventListener('change',()=>{ libPage=1; renderLibrary(); });
+libSearch.addEventListener('input',()=>{ libPage=1; renderLibrary(); });
+libColFilter.addEventListener('change',()=>{ libPage=1; renderLibrary(); });
+libSort.addEventListener('change',()=>{ libPage=1; renderLibrary(); });
 
 // toLibraryBtn removed — sidebar 🏠 handles navigation back to library
 

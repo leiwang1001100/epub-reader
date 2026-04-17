@@ -15,16 +15,14 @@ async function renderLibrary(){
   metaEl.textContent=''; statusEl.textContent='';
 
   // Populate collection filter dropdown + fetch all books in parallel
-  const libColFilter=document.getElementById('libColFilter');
-  const libSearch=document.getElementById('libSearch');
-  const libSort=document.getElementById('libSort');
   const [allCols, allBooks]=await Promise.all([idbGetAllCols(), idbGetAll()]);
   const prevColVal=libColFilter.value;
-  libColFilter.innerHTML='<option value="">📁 All Collections</option>';
-  libColFilter.innerHTML+='<option value="__none__">🚫 Uncategorised</option>';
-  allCols.sort((a,b)=>a.name.localeCompare(b.name)).forEach(c=>{
-    libColFilter.innerHTML+=`<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`;
-  });
+  const optionsHtml = [
+    '<option value="">📁 All Collections</option>',
+    '<option value="__none__">🚫 Uncategorised</option>',
+    ...allCols.sort((a,b)=>a.name.localeCompare(b.name)).map(c=>`<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`)
+  ].join('');
+  libColFilter.innerHTML = optionsHtml;
   libColFilter.value=prevColVal||'';
 
   // Apply search/sort/filter
@@ -52,9 +50,6 @@ async function renderLibrary(){
   const books=filteredBooks.slice(start, start+libPageSize);
 
   // Update pagination UI
-  const libPageInfo=document.getElementById('libPageInfo');
-  const libPrevBtn=document.getElementById('libPrevBtn');
-  const libNextBtn=document.getElementById('libNextBtn');
   libPageInfo.textContent=`Page ${libPage} of ${totalPages}`;
   libPrevBtn.disabled=libPage<=1;
   libNextBtn.disabled=libPage>=totalPages;

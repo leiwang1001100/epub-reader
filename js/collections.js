@@ -18,9 +18,6 @@ async function renderCollections(){
   const cols=sortedCols.slice(start, start+colPageSize);
 
   // Update pagination UI
-  const colPageInfo=document.getElementById('colPageInfo');
-  const colPrevBtn=document.getElementById('colPrevBtn');
-  const colNextBtn=document.getElementById('colNextBtn');
   colPageInfo.textContent=`Page ${colPage} of ${totalPages}`;
   colPrevBtn.disabled=colPage<=1;
   colNextBtn.disabled=colPage>=totalPages;

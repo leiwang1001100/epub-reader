@@ -225,7 +225,7 @@ async function showMoreMenu(btn, book, container){
 }
 
 function initCollections(){
-  backToCollections.onclick=()=>{ collectionDetail.style.display='none'; collectionsGrid.style.display='grid'; renderCollections(); };
+  // backToCollections button removed — 📁 sidebar handles navigation back to collections
   newCollectionBtn.onclick=async()=>{
     const col=await promptNewCollection();
     if(!col) return;

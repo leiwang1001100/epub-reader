@@ -12,7 +12,7 @@ const newCollectionBtn=document.getElementById('newCollectionBtn');
 const collectionDetail=document.getElementById('collectionDetail');
 const detailGrid=document.getElementById('detailGrid');
 const detailTitle=document.getElementById('detailTitle');
-const backToCollections=document.getElementById('backToCollections');
+// backToCollections button removed — use 📁 sidebar to navigate back
 const sideHome=document.getElementById('sideHome');
 const sideCollections=document.getElementById('sideCollections');
 const viewerEl=document.getElementById('viewer');

@@ -3,7 +3,7 @@
 > A lightweight, offline EPUB reader that runs entirely in your browser.  
 > No server required — works directly with `file://`.
 
-![Version](https://img.shields.io/badge/version-v1.7.9-blue)
+![Version](https://img.shields.io/badge/version-v1.8.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---

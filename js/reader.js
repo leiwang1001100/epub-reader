@@ -228,13 +228,13 @@ async function openBookFromDB(id){
       const r=await idbGet(currentBookId);
       if(r){
         r.lastCfi=loc.start.cfi;
-        // Auto-mark as finished at 95%+
+        // Auto-mark as finished at 99%+
         if(pctRounded>=99 && !r.finished){
           r.finished=true; r.finishedAt=Date.now();
-          invalidateBooksCache();
           flashStatus('📖 Marked as finished!');
         }
         await idbAddBook(r);
+        invalidateBooksCache(); // always invalidate so library shows correct Read/Continue state
       }
     }catch{}
   });

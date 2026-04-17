@@ -13,10 +13,12 @@ function escapeHtml(str){return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').r
 
 const MAX_COL_NAME=50;
 
-// Generate initials from a title string
+// Generate initials from a title string — handles empty, whitespace-only and malformed titles
 function getInitials(title){
-  if(!title) return '?';
-  return title.trim().split(/\s+/).slice(0,2).map(w=>w[0].toUpperCase()).join('');
+  if(!title || typeof title !== 'string') return '?';
+  const words=title.trim().split(/\s+/).filter(w=>w.length>0);
+  if(!words.length) return '?';
+  return words.slice(0,2).map(w=>w[0].toUpperCase()).join('');
 }
 
 // Create a cover placeholder element for books without covers

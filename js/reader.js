@@ -95,6 +95,9 @@ function wirePaging(){
   if(_keyHandler) document.removeEventListener('keydown', _keyHandler);
   _keyHandler=(e)=>{
     if(viewerEl.style.display!=='block') return;
+    // Don't hijack shortcuts when user is typing in an input/textarea
+    const tag=document.activeElement?.tagName;
+    if(tag==='INPUT'||tag==='TEXTAREA'||document.activeElement?.isContentEditable) return;
     let handled=false;
     switch(e.key){
       case 'ArrowLeft': case 'PageUp': rendition.prev(); handled=true; break;

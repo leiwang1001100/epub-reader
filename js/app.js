@@ -41,9 +41,11 @@ const colPrevBtn=document.getElementById('colPrevBtn');
 const colNextBtn=document.getElementById('colNextBtn');
 
 /********** Pagination state **********/
-let libPageSize=parseInt(localStorage.getItem('epub_libPageSize')||'20',10);
+const VALID_PAGE_SIZES=[20,50,100];
+function clampPageSize(val){ const n=parseInt(val,10); return VALID_PAGE_SIZES.includes(n)?n:20; }
+let libPageSize=clampPageSize(localStorage.getItem('epub_libPageSize')||'20');
 let libPage=1;
-let colPageSize=parseInt(localStorage.getItem('epub_colPageSize')||'20',10);
+let colPageSize=clampPageSize(localStorage.getItem('epub_colPageSize')||'20');
 let colPage=1;
 
 /********** Dark theme **********/

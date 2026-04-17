@@ -66,10 +66,11 @@ function initTheme(){
     localStorage.setItem('epub_theme', nowDark?'dark':'light');
   };
 
-  // Listen for system theme changes
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e=>{
-    if(!localStorage.getItem('epub_theme')) applyTheme(e.matches);
-  });
+  // Listen for system theme changes — with fallback for older browsers (Safari < 14)
+  const mq=window.matchMedia('(prefers-color-scheme: dark)');
+  const mqHandler=e=>{ if(!localStorage.getItem('epub_theme')) applyTheme(e.matches); };
+  try{ mq.addEventListener('change', mqHandler); }
+  catch{ try{ mq.addListener(mqHandler); }catch{} }
 }
 
 function applyTheme(dark){

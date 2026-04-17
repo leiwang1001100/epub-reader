@@ -87,13 +87,21 @@ async function renderLibrary(){
 
     const progSpan=document.createElement('span');
     progSpan.textContent=`📖 ${inProgressCount} in progress`;
-    progSpan.style.cssText=`cursor:pointer;margin-right:8px;font-weight:${statusFilter==='progress'?'700':'400'};text-decoration:${statusFilter==='progress'?'underline':'none'};color:${statusFilter==='progress'?'#4f46e5':'inherit'};`;
-    progSpan.onclick=()=>{ statusFilter=statusFilter==='progress'?'':'progress'; libPage=1; renderLibrary(); };
+    if(inProgressCount>0){
+      progSpan.style.cssText=`cursor:pointer;margin-right:8px;font-weight:${statusFilter==='progress'?'700':'400'};text-decoration:${statusFilter==='progress'?'underline':'none'};color:${statusFilter==='progress'?'#4f46e5':'inherit'};`;
+      progSpan.onclick=()=>{ statusFilter=statusFilter==='progress'?'':'progress'; libPage=1; renderLibrary(); };
+    } else {
+      progSpan.style.cssText='margin-right:8px;color:var(--text-muted);cursor:default;opacity:0.5;';
+    }
 
     const finSpan=document.createElement('span');
     finSpan.textContent=`✅ ${finishedCount} finished`;
-    finSpan.style.cssText=`cursor:pointer;font-weight:${statusFilter==='finished'?'700':'400'};text-decoration:${statusFilter==='finished'?'underline':'none'};color:${statusFilter==='finished'?'#16a34a':'inherit'};`;
-    finSpan.onclick=()=>{ statusFilter=statusFilter==='finished'?'':'finished'; libPage=1; renderLibrary(); };
+    if(finishedCount>0){
+      finSpan.style.cssText=`cursor:pointer;font-weight:${statusFilter==='finished'?'700':'400'};text-decoration:${statusFilter==='finished'?'underline':'none'};color:${statusFilter==='finished'?'#16a34a':'inherit'};`;
+      finSpan.onclick=()=>{ statusFilter=statusFilter==='finished'?'':'finished'; libPage=1; renderLibrary(); };
+    } else {
+      finSpan.style.cssText='color:var(--text-muted);cursor:default;opacity:0.5;';
+    }
 
     const sep=()=>{ const s=document.createElement('span'); s.textContent='  ·  '; s.style.color='var(--text-muted)'; return s; };
     libHint.append(totalSpan, sep(), progSpan, sep(), finSpan);
